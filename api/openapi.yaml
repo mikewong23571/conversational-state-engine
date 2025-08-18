@@ -1,0 +1,304 @@
+openapi: 3.1.0
+info:
+  title: Conversational State Engine
+  version: 0.1.0
+  description: LLM-driven state maintenance through conversational interface
+servers: 
+  - url: /api
+paths:
+  /sessions/{sid}/state:
+    get:
+      summary: Get canonical state (sliceable)
+      parameters:
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+        - in: query
+          name: paths
+          required: false
+          schema: 
+            type: string
+            description: "comma-separated RFC6901 or slice spec"
+      responses:
+        "200": 
+          description: OK
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/State"
+
+  /sessions/{sid}/intents:
+    post:
+      summary: Draft intentions (from analyzer or client)
+      parameters: 
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: "#/components/schemas/IntentionSet"
+      responses:
+        "200": 
+          description: Draft stored
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/DraftIntentionsResp"
+
+  /sessions/{sid}/patch-proposals:
+    post:
+      summary: Plan patches & impact analysis from intentions
+      parameters: 
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: "#/components/schemas/PatchProposalReq"
+      responses:
+        "200": 
+          description: Proposal
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/PatchProposal"
+
+  /sessions/{sid}/confirm:
+    post:
+      summary: Progressive confirmation (intent|change|side_effect)
+      parameters:
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+        - in: query
+          name: stage
+          required: true
+          schema: 
+            type: string
+            enum: [intent, change, side_effect]
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: "#/components/schemas/ConfirmationReq"
+      responses:
+        "200": 
+          description: Stage confirmed
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/ConfirmationResp"
+
+  /sessions/{sid}/commit:
+    post:
+      summary: Apply patches atomically and bump version, then render artifacts
+      parameters: 
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+      requestBody: 
+        required: true
+        content: 
+          application/json: 
+            schema: 
+              $ref: "#/components/schemas/CommitReq"
+      responses:
+        "200": 
+          description: Committed
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/CommitResp"
+
+  /sessions/{sid}/artifacts:
+    get:
+      summary: List or fetch artifacts for a version
+      parameters:
+        - in: path
+          name: sid
+          required: true
+          schema: 
+            type: string
+        - in: query
+          name: version
+          schema: 
+            type: string
+      responses:
+        "200": 
+          description: OK
+          content: 
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/ArtifactList"
+
+components:
+  schemas:
+    State:
+      type: object
+      properties:
+        version: 
+          type: string
+        schema_version: 
+          type: string
+        data: 
+          type: object
+    Intention:
+      type: object
+      required: [action, target_path]
+      properties:
+        action: 
+          type: string
+          enum: [add, modify, delete, move, set]
+        target_path: 
+          type: string
+          description: "RFC6901 pointer"
+        value: {}
+        reason: 
+          type: string
+        confidence: 
+          type: number
+    IntentionSet:
+      type: object
+      properties:
+        items: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Intention"
+        notes: 
+          type: string
+    DraftIntentionsResp:
+      type: object
+      properties: 
+        intention_set_id: 
+          type: string
+        status: 
+          type: string
+    Patch:
+      type: object
+      oneOf:
+        - required: [op, path, value]
+        - required: [op, path]
+      properties:
+        op: 
+          type: string
+          enum: [add, remove, replace, move, copy, test]
+        path: 
+          type: string
+        from: 
+          type: string
+        value: {}
+    ImpactAnalysis:
+      type: object
+      properties:
+        affected_paths: 
+          type: array
+          items: 
+            type: string
+        risk_level: 
+          type: string
+          enum: [low, medium, high]
+        semantic_conflicts:
+          type: array
+          items:
+            type: object
+            properties:
+              type: 
+                type: string
+              rule: 
+                type: string
+              severity: 
+                type: string
+              message: 
+                type: string
+              suggestion: 
+                type: object
+        suggested_alternatives: 
+          type: array
+          items: 
+            type: object
+    PatchProposalReq:
+      type: object
+      properties: 
+        intention_set_id: 
+          type: string
+      required: [intention_set_id]
+    PatchProposal:
+      type: object
+      properties:
+        proposal_id: 
+          type: string
+        patches: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Patch"
+        impact_analysis: 
+          $ref: "#/components/schemas/ImpactAnalysis"
+        preview_diff: 
+          type: object
+    ConfirmationReq:
+      type: object
+      properties:
+        proposal_id: 
+          type: string
+        accept_patch_indices: 
+          type: array
+          items: 
+            type: integer
+        apply_auto_fixes: 
+          type: boolean
+      required: [proposal_id]
+    ConfirmationResp:
+      type: object
+      properties: 
+        stage: 
+          type: string
+        status: 
+          type: string
+    CommitReq:
+      type: object
+      properties:
+        proposal_id: 
+          type: string
+        message: 
+          type: string
+      required: [proposal_id]
+    CommitResp:
+      type: object
+      properties:
+        commit_id: 
+          type: string
+        version: 
+          type: string
+        artifacts: 
+          $ref: "#/components/schemas/ArtifactList"
+    ArtifactList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties: 
+              id: 
+                type: string
+              type: 
+                type: string
+              url: 
+                type: string
