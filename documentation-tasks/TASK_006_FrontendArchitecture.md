@@ -1,10 +1,10 @@
 # TASK-006: Analyze Frontend Architecture Implementation
 
-**Task ID:** TASK-006  
-**Assignee:** [To be assigned]  
-**Estimated Effort:** 3-4 days  
-**Skill Level Required:** Mid-level Frontend Engineer  
-**Priority:** High  
+**Task ID:** TASK-006
+**Assignee:** [To be assigned]
+**Estimated Effort:** 3-4 days
+**Skill Level Required:** Mid-level Frontend Engineer
+**Priority:** High
 
 ## Task Overview
 
@@ -209,6 +209,6 @@ The command parser is critical for the design requirements:
 
 ---
 
-**Task Assignment Date:** [To be filled]  
-**Target Completion Date:** [To be filled]  
+**Task Assignment Date:** [To be filled]
+**Target Completion Date:** [To be filled]
 **Assigned Engineer:** [To be filled]

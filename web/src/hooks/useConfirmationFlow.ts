@@ -68,7 +68,7 @@ export function useConfirmationFlow() {
 
   const confirmIntent = useCallback(() => {
     if (state.stage !== 'intent') return;
-    
+
     setState(prev => ({
       ...prev,
       stage: 'change',
@@ -88,7 +88,7 @@ export function useConfirmationFlow() {
 
   const confirmChanges = useCallback(() => {
     if (state.stage !== 'change') return;
-    
+
     setState(prev => ({
       ...prev,
       stage: 'side_effect',
@@ -108,7 +108,7 @@ export function useConfirmationFlow() {
 
   const confirmSideEffects = useCallback(() => {
     if (state.stage !== 'side_effect') return;
-    
+
     setState(prev => ({
       ...prev,
       stage: 'completed',
@@ -119,7 +119,7 @@ export function useConfirmationFlow() {
 
   const goBack = useCallback(() => {
     if (!state.canGoBack) return;
-    
+
     setState(prev => {
       switch (prev.stage) {
         case 'change':
@@ -166,7 +166,7 @@ export function useConfirmationFlow() {
       ...prev,
       sideEffects: prev.sideEffects ? {
         ...prev.sideEffects,
-        auto_fixes: prev.sideEffects.auto_fixes.map((fix, i) => 
+        auto_fixes: prev.sideEffects.auto_fixes.map((fix, i) =>
           i === index ? { ...fix, enabled: !fix.enabled } : fix
         )
       } : undefined

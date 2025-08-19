@@ -3,7 +3,7 @@ info:
   title: Conversational State Engine
   version: 0.1.0
   description: LLM-driven state maintenance through conversational interface
-servers: 
+servers:
   - url: /api
 paths:
   /sessions/{sid}/state:
@@ -13,66 +13,66 @@ paths:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
         - in: query
           name: paths
           required: false
-          schema: 
+          schema:
             type: string
             description: "comma-separated RFC6901 or slice spec"
       responses:
-        "200": 
+        "200":
           description: OK
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/State"
 
   /sessions/{sid}/intents:
     post:
       summary: Draft intentions (from analyzer or client)
-      parameters: 
+      parameters:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
-      requestBody: 
+      requestBody:
         required: true
-        content: 
-          application/json: 
-            schema: 
+        content:
+          application/json:
+            schema:
               $ref: "#/components/schemas/IntentionSet"
       responses:
-        "200": 
+        "200":
           description: Draft stored
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/DraftIntentionsResp"
 
   /sessions/{sid}/patch-proposals:
     post:
       summary: Plan patches & impact analysis from intentions
-      parameters: 
+      parameters:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
-      requestBody: 
+      requestBody:
         required: true
-        content: 
-          application/json: 
-            schema: 
+        content:
+          application/json:
+            schema:
               $ref: "#/components/schemas/PatchProposalReq"
       responses:
-        "200": 
+        "200":
           description: Proposal
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/PatchProposal"
 
   /sessions/{sid}/confirm:
@@ -82,49 +82,49 @@ paths:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
         - in: query
           name: stage
           required: true
-          schema: 
+          schema:
             type: string
             enum: [intent, change, side_effect]
-      requestBody: 
+      requestBody:
         required: true
-        content: 
-          application/json: 
-            schema: 
+        content:
+          application/json:
+            schema:
               $ref: "#/components/schemas/ConfirmationReq"
       responses:
-        "200": 
+        "200":
           description: Stage confirmed
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/ConfirmationResp"
 
   /sessions/{sid}/commit:
     post:
       summary: Apply patches atomically and bump version, then render artifacts
-      parameters: 
+      parameters:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
-      requestBody: 
+      requestBody:
         required: true
-        content: 
-          application/json: 
-            schema: 
+        content:
+          application/json:
+            schema:
               $ref: "#/components/schemas/CommitReq"
       responses:
-        "200": 
+        "200":
           description: Committed
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/CommitResp"
 
   /sessions/{sid}/artifacts:
@@ -134,18 +134,18 @@ paths:
         - in: path
           name: sid
           required: true
-          schema: 
+          schema:
             type: string
         - in: query
           name: version
-          schema: 
+          schema:
             type: string
       responses:
-        "200": 
+        "200":
           description: OK
-          content: 
-            application/json: 
-              schema: 
+          content:
+            application/json:
+              schema:
                 $ref: "#/components/schemas/ArtifactList"
 
 components:
@@ -153,42 +153,42 @@ components:
     State:
       type: object
       properties:
-        version: 
+        version:
           type: string
-        schema_version: 
+        schema_version:
           type: string
-        data: 
+        data:
           type: object
     Intention:
       type: object
       required: [action, target_path]
       properties:
-        action: 
+        action:
           type: string
           enum: [add, modify, delete, move, set]
-        target_path: 
+        target_path:
           type: string
           description: "RFC6901 pointer"
         value: {}
-        reason: 
+        reason:
           type: string
-        confidence: 
+        confidence:
           type: number
     IntentionSet:
       type: object
       properties:
-        items: 
+        items:
           type: array
-          items: 
+          items:
             $ref: "#/components/schemas/Intention"
-        notes: 
+        notes:
           type: string
     DraftIntentionsResp:
       type: object
-      properties: 
-        intention_set_id: 
+      properties:
+        intention_set_id:
           type: string
-        status: 
+        status:
           type: string
     Patch:
       type: object
@@ -196,22 +196,22 @@ components:
         - required: [op, path, value]
         - required: [op, path]
       properties:
-        op: 
+        op:
           type: string
           enum: [add, remove, replace, move, copy, test]
-        path: 
+        path:
           type: string
-        from: 
+        from:
           type: string
         value: {}
     ImpactAnalysis:
       type: object
       properties:
-        affected_paths: 
+        affected_paths:
           type: array
-          items: 
+          items:
             type: string
-        risk_level: 
+        risk_level:
           type: string
           enum: [low, medium, high]
         semantic_conflicts:
@@ -219,74 +219,74 @@ components:
           items:
             type: object
             properties:
-              type: 
+              type:
                 type: string
-              rule: 
+              rule:
                 type: string
-              severity: 
+              severity:
                 type: string
-              message: 
+              message:
                 type: string
-              suggestion: 
+              suggestion:
                 type: object
-        suggested_alternatives: 
+        suggested_alternatives:
           type: array
-          items: 
+          items:
             type: object
     PatchProposalReq:
       type: object
-      properties: 
-        intention_set_id: 
+      properties:
+        intention_set_id:
           type: string
       required: [intention_set_id]
     PatchProposal:
       type: object
       properties:
-        proposal_id: 
+        proposal_id:
           type: string
-        patches: 
+        patches:
           type: array
-          items: 
+          items:
             $ref: "#/components/schemas/Patch"
-        impact_analysis: 
+        impact_analysis:
           $ref: "#/components/schemas/ImpactAnalysis"
-        preview_diff: 
+        preview_diff:
           type: object
     ConfirmationReq:
       type: object
       properties:
-        proposal_id: 
+        proposal_id:
           type: string
-        accept_patch_indices: 
+        accept_patch_indices:
           type: array
-          items: 
+          items:
             type: integer
-        apply_auto_fixes: 
+        apply_auto_fixes:
           type: boolean
       required: [proposal_id]
     ConfirmationResp:
       type: object
-      properties: 
-        stage: 
+      properties:
+        stage:
           type: string
-        status: 
+        status:
           type: string
     CommitReq:
       type: object
       properties:
-        proposal_id: 
+        proposal_id:
           type: string
-        message: 
+        message:
           type: string
       required: [proposal_id]
     CommitResp:
       type: object
       properties:
-        commit_id: 
+        commit_id:
           type: string
-        version: 
+        version:
           type: string
-        artifacts: 
+        artifacts:
           $ref: "#/components/schemas/ArtifactList"
     ArtifactList:
       type: object
@@ -295,10 +295,10 @@ components:
           type: array
           items:
             type: object
-            properties: 
-              id: 
+            properties:
+              id:
                 type: string
-              type: 
+              type:
                 type: string
-              url: 
+              url:
                 type: string

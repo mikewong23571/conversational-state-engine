@@ -141,7 +141,7 @@ uv tree
 # Add runtime dependency
 pnpm --filter web add package-name
 
-# Add development dependency  
+# Add development dependency
 pnpm --filter web add -D package-name
 
 # Add to root (workspace management)
@@ -293,7 +293,7 @@ Currently using SQLite with `CREATE TABLE IF NOT EXISTS`. For schema changes:
 # ❌ Wrong
 from models import IntentionSet
 
-# ✅ Correct  
+# ✅ Correct
 from .models import IntentionSet
 ```
 
@@ -330,7 +330,7 @@ uvicorn server.app:app --reload --port 8001
 
 **Error**: `sqlite3.OperationalError: database is locked`
 
-**Solution**: 
+**Solution**:
 ```bash
 # Close all connections and restart server
 pkill -f "uvicorn"

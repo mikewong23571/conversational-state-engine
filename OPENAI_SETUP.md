@@ -250,7 +250,7 @@ You can test different models by changing the `CSE_MODEL` environment variable:
 export CSE_MODEL=gpt-4
 # or
 export CSE_MODEL=llama2:13b
-# or  
+# or
 export CSE_MODEL=deepseek-coder
 ```
 

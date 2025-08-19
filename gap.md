@@ -149,7 +149,7 @@ web/src/
 1. **集成DiffPanel组件替换当前简化版本**
    - 修改App.tsx使用DiffPanel
    - 移除重复的补丁显示逻辑
-   
+
 2. **实现渐进式确认状态机**
    - 添加确认阶段状态管理
    - 实现Intent → Change → Side-Effect流程

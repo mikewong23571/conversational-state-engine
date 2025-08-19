@@ -36,7 +36,7 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
   const [selected, setSelected] = useState<boolean[]>(
     proposedPatches.map(() => true)
   );
-  
+
   const [viewMode, setViewMode] = useState<'list' | 'json' | 'side-by-side'>('list');
 
   // 计算预览状态
@@ -51,7 +51,7 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
           glossary: []
         }
       };
-      
+
       let nextState = JSON.parse(JSON.stringify(baseState));
 
       proposedPatches.forEach((patch, idx) => {
@@ -78,13 +78,13 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
           }
         }
       });
-      
+
       return nextState;
     } catch (error) {
       console.error('Failed to apply patches:', error);
       // 返回默认状态而不是可能为null的currentState
       return currentState || {
-        version: "v1", 
+        version: "v1",
         schema_version: "1.0.0",
         data: { stories: [], glossary: [] }
       };
@@ -99,14 +99,14 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
       delete: [],
       other: []
     };
-    
+
     proposedPatches.forEach((patch, index) => {
       const group = patch.op === 'add' ? 'add' :
                    patch.op === 'replace' ? 'modify' :
                    patch.op === 'remove' ? 'delete' : 'other';
       groups[group].push({ patch, index });
     });
-    
+
     return groups;
   }, [proposedPatches]);
 
@@ -209,12 +209,12 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
             {/* Grouped patches */}
             {Object.entries(groupedPatches).map(([group, items]) => {
               if (items.length === 0) return null;
-              
+
               return (
                 <div key={group} className="mb-4">
                   <h4 className="text-sm font-medium text-gray-600 mb-2 capitalize">
-                    {group === 'add' ? '新增' : 
-                     group === 'modify' ? '修改' : 
+                    {group === 'add' ? '新增' :
+                     group === 'modify' ? '修改' :
                      group === 'delete' ? '删除' : '其他'} ({items.length})
                   </h4>
                   <div className="space-y-2">
@@ -240,7 +240,7 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
                           </div>
                           {'value' in patch && patch.value !== undefined && (
                             <div className="mt-1 text-xs text-gray-500 truncate">
-                              {typeof patch.value === 'object' 
+                              {typeof patch.value === 'object'
                                 ? JSON.stringify(patch.value).substring(0, 50) + '...'
                                 : String(patch.value)}
                             </div>

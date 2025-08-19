@@ -27,7 +27,7 @@ export function useCommandHistory<T>(
     // Apply the patch
     const nextState = apply(state, patch);
     setState(nextState);
-    
+
     // Update history (remove everything after current position)
     const newHistory = history.slice(0, position + 1).concat([patch]);
     setHistory(newHistory);
@@ -36,7 +36,7 @@ export function useCommandHistory<T>(
 
   const undo = useCallback(() => {
     if (position < 0) return;
-    
+
     const patch = history[position];
     const prevState = reverse(state, patch);
     setState(prevState);
@@ -45,7 +45,7 @@ export function useCommandHistory<T>(
 
   const redo = useCallback(() => {
     if (position >= history.length - 1) return;
-    
+
     const patch = history[position + 1];
     const nextState = apply(state, patch);
     setState(nextState);
@@ -60,14 +60,14 @@ export function useCommandHistory<T>(
 
   const goto = useCallback((targetPosition: number) => {
     if (targetPosition < -1 || targetPosition >= history.length) return;
-    
+
     let currentState = initialState;
-    
+
     // Replay history up to target position
     for (let i = 0; i <= targetPosition; i++) {
       currentState = apply(currentState, history[i]);
     }
-    
+
     setState(currentState);
     setPosition(targetPosition);
   }, [history, initialState, apply]);
@@ -96,7 +96,7 @@ export function useAdvancedCommandHistory<T>(initialState: T) {
     // Execute the command
     const nextState = command.execute(state);
     setState(nextState);
-    
+
     // Update history
     const newHistory = history.slice(0, position + 1).concat([command]);
     setHistory(newHistory);
@@ -105,7 +105,7 @@ export function useAdvancedCommandHistory<T>(initialState: T) {
 
   const undo = useCallback(() => {
     if (position < 0) return;
-    
+
     const command = history[position];
     const prevState = command.undo(state);
     setState(prevState);
@@ -114,7 +114,7 @@ export function useAdvancedCommandHistory<T>(initialState: T) {
 
   const redo = useCallback(() => {
     if (position >= history.length - 1) return;
-    
+
     const command = history[position + 1];
     const nextState = command.execute(state);
     setState(nextState);
@@ -139,7 +139,7 @@ export function useAdvancedCommandHistory<T>(initialState: T) {
     history: getHistoryDescriptions(),
     goto: (idx: number) => {
       if (idx < -1 || idx >= history.length) return;
-      
+
       let currentState = initialState;
       for (let i = 0; i <= idx; i++) {
         currentState = history[i].execute(currentState);

@@ -1,10 +1,10 @@
 # TASK-003: Analyze Conflict Detection System
 
-**Task ID:** TASK-003  
-**Assignee:** [To be assigned]  
-**Estimated Effort:** 2-3 days  
-**Skill Level Required:** Mid-level Engineer  
-**Priority:** High  
+**Task ID:** TASK-003
+**Assignee:** [To be assigned]
+**Estimated Effort:** 2-3 days
+**Skill Level Required:** Mid-level Engineer
+**Priority:** High
 
 ## Task Overview
 
@@ -197,6 +197,6 @@ Analyze the conflict detection and impact analysis system implementation against
 
 ---
 
-**Task Assignment Date:** [To be filled]  
-**Target Completion Date:** [To be filled]  
+**Task Assignment Date:** [To be filled]
+**Target Completion Date:** [To be filled]
 **Assigned Engineer:** [To be filled]

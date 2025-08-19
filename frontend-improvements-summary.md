@@ -94,8 +94,8 @@ const handleCommit = async () => {
 
 // 智能按钮状态
 disabled={loading || confirmation.state.stage !== 'completed'}
-className={confirmation.state.stage === 'completed' 
-  ? 'bg-green-600 text-white hover:bg-green-700' 
+className={confirmation.state.stage === 'completed'
+  ? 'bg-green-600 text-white hover:bg-green-700'
   : 'bg-gray-300 text-gray-500'}
 ```
 

@@ -72,7 +72,7 @@ npm --version
 ```
 conversational-state-engine/          # Root workspace
 ├── package.json                      # Root workspace management
-├── pnpm-workspace.yaml               # PNPM workspace configuration  
+├── pnpm-workspace.yaml               # PNPM workspace configuration
 ├── pyproject.toml                    # Python project configuration
 ├── web/                              # Frontend workspace
 │   └── package.json                  # Frontend dependencies
@@ -119,7 +119,7 @@ dependencies = [
 [tool.uv]
 dev-dependencies = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0", 
+    "pytest-asyncio>=0.21.0",
     "httpx>=0.25.0",
     "mypy>=1.8.0",
     "ruff>=0.1.0",
@@ -532,7 +532,7 @@ pnpm --filter web lint:fix            # Fix TypeScript linting
 uv add package-name                   # Add Python package
 uv sync --upgrade                     # Update all Python packages
 
-# Node.js dependencies  
+# Node.js dependencies
 pnpm --filter web add package-name    # Add frontend package
 pnpm update                           # Update all Node.js packages
 ```
