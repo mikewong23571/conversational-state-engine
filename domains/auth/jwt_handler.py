@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""JWT Token handling utilities."""
 
 from datetime import datetime, timedelta, timezone
 from typing import Any

@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""Intention processing REST endpoints."""
 
 import uuid
 
@@ -17,7 +17,7 @@ async def draft_intents(
     sid: str,
     intention_set: IntentionSet,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, str]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

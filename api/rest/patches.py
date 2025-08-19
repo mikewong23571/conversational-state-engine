@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""Patch proposal and commit REST endpoints."""
 
 import json
 import uuid
@@ -37,7 +37,7 @@ async def propose_patches(
     sid: str,
     request: PatchProposalRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -139,7 +139,7 @@ async def propose_patches(
             ),
         )
         conn.commit()
-    response = proposal.model_dump()
+    response: dict[str, Any] = proposal.model_dump()
     response.update(
         {
             "conflicts_detected": len(conflicts),
@@ -168,7 +168,7 @@ async def confirm_intent_stage(
     sid: str,
     request: ConfirmIntentRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, str]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -206,7 +206,7 @@ async def confirm_changes_stage(
     sid: str,
     request: ConfirmChangesRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -281,7 +281,7 @@ async def confirm_side_effects_stage(
     sid: str,
     request: ConfirmSideEffectsRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -329,7 +329,8 @@ async def confirm_side_effects_stage(
             )
             for conflict in conflicts:
                 if hasattr(conflict, "auto_fix") and conflict.auto_fix:
-                    auto_fixes[conflict.path] = conflict.auto_fix
+                    # Use rule as key since path doesn't exist on Conflict model
+                    auto_fixes[conflict.rule] = conflict.auto_fix
         stage_confirmations["side_effects_confirmed"] = True
         stage_confirmations["side_effects_confirmed_at"] = datetime.utcnow().isoformat()
         stage_confirmations["side_effects_confirmed_by"] = current_user.user_id
@@ -357,7 +358,7 @@ async def commit_changes(
     sid: str,
     request: CommitRequest,
     current_user: User = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     if "write" not in current_user.permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

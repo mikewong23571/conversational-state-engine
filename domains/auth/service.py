@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""Authentication service."""
 
 from __future__ import annotations
 

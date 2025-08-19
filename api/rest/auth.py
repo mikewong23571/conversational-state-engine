@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""Authentication REST endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -21,13 +21,15 @@ def get_auth_service() -> AuthService:
 @router.post("/register", response_model=dict)
 async def register(
     user_data: UserCreate, service: AuthService = Depends(get_auth_service)
-):
+) -> dict[str, str]:
     user = service.create_user(user_data)
     return {"message": "User created successfully", "user_id": user.user_id}
 
 
 @router.post("/login", response_model=Token)
-async def login(user: UserLogin, service: AuthService = Depends(get_auth_service)):
+async def login(
+    user: UserLogin, service: AuthService = Depends(get_auth_service)
+) -> Token:
     auth_user = service.authenticate(user.email, user.password)
     if not auth_user:
         raise HTTPException(
@@ -38,5 +40,5 @@ async def login(user: UserLogin, service: AuthService = Depends(get_auth_service
 
 
 @router.get("/me", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_user)):
+async def read_users_me(current_user: User = Depends(get_current_user)) -> User:
     return current_user

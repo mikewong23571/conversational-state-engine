@@ -1,4 +1,4 @@
-# mypy: ignore-errors
+"""API module initialization."""
 
 from fastapi import FastAPI
 
@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
     app.include_router(patches.router)
 
     @app.get("/")
-    async def root():
+    async def root() -> dict[str, str]:
         return {
             "name": "Conversational State Engine",
             "version": "0.1.0",
@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
         }
 
     @app.get("/health")
-    async def health_check():
+    async def health_check() -> dict[str, str]:
         return {"status": "healthy"}
 
     return app
