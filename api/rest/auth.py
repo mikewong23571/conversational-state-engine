@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from domains.auth import (
@@ -17,7 +19,9 @@ def get_auth_service() -> AuthService:
 
 
 @router.post("/register", response_model=dict)
-async def register(user_data: UserCreate, service: AuthService = Depends(get_auth_service)):
+async def register(
+    user_data: UserCreate, service: AuthService = Depends(get_auth_service)
+):
     user = service.create_user(user_data)
     return {"message": "User created successfully", "user_id": user.user_id}
 

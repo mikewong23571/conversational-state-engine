@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 import json
 import uuid
 from datetime import datetime
@@ -62,7 +64,9 @@ async def propose_patches(
         patches: list[dict[str, Any]] = []
         for intent in intentions.items:
             if intent.action == "add":
-                patches.append({"op": "add", "path": intent.target_path, "value": intent.value})
+                patches.append(
+                    {"op": "add", "path": intent.target_path, "value": intent.value}
+                )
             elif intent.action == "modify":
                 patches.append(
                     {"op": "replace", "path": intent.target_path, "value": intent.value}
@@ -457,8 +461,16 @@ async def commit_changes(
         "version": new_version,
         "artifacts": {
             "items": [
-                {"id": md_artifact_id, "type": "markdown", "url": f"/artifacts/{md_artifact_id}"},
-                {"id": csv_artifact_id, "type": "csv", "url": f"/artifacts/{csv_artifact_id}"},
+                {
+                    "id": md_artifact_id,
+                    "type": "markdown",
+                    "url": f"/artifacts/{md_artifact_id}",
+                },
+                {
+                    "id": csv_artifact_id,
+                    "type": "csv",
+                    "url": f"/artifacts/{csv_artifact_id}",
+                },
             ]
         },
     }

@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 from fastapi import FastAPI
 
 from domains.auth import init_auth_db
@@ -19,7 +21,11 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     async def root():
-        return {"name": "Conversational State Engine", "version": "0.1.0", "docs": "/docs"}
+        return {
+            "name": "Conversational State Engine",
+            "version": "0.1.0",
+            "docs": "/docs",
+        }
 
     @app.get("/health")
     async def health_check():

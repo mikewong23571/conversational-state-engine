@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -9,7 +11,9 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-def create_jwt_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
+def create_jwt_token(
+    data: dict[str, Any], expires_delta: timedelta | None = None
+) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

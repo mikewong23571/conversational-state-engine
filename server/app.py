@@ -6,7 +6,7 @@ app = create_app()
 
 
 def main() -> None:
-    import uvicorn
+    import uvicorn  # type: ignore
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
 

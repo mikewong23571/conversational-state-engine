@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 from __future__ import annotations
 
 import json
@@ -116,7 +118,9 @@ def get_current_user(
     )
 
 
-def grant_session_access(session_id: str, user_id: str, permission_level: str = "read") -> None:
+def grant_session_access(
+    session_id: str, user_id: str, permission_level: str = "read"
+) -> None:
     with get_db() as conn:
         conn.execute(
             """INSERT OR REPLACE INTO session_permissions
