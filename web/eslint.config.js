@@ -10,7 +10,10 @@ export default [
     languageOptions: {
       parser: tsParser,
       sourceType: 'module',
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
+      parserOptions: {
+        project: './tsconfig.json',
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,

@@ -22,8 +22,8 @@ repos:
         files: "^web/"
         args: ["--config", "web/eslint.config.js"]
         additional_dependencies:
-          - eslint@9.0.0
-          - typescript@5.3.3
-          - '@typescript-eslint/parser@6.0.0'
-          - '@typescript-eslint/eslint-plugin@6.0.0'
+          - eslint@9.33.0
+          - typescript@5.7.2
+          - '@typescript-eslint/parser@8.20.0'
+          - '@typescript-eslint/eslint-plugin@8.20.0'
         language_version: system
