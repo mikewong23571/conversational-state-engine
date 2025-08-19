@@ -2,7 +2,7 @@
 
 **Feature Area:** Batch Operations
 **Analyst:** OpenAI Assistant
-**Analysis Date:** 2024-06-24
+**Analysis Date:** 2025-08-19
 **Design Document Version:** latest commit
 
 ## Feature Overview
@@ -26,7 +26,7 @@
 - **Design Specification:** design.md line 101-104
 - **Design Section:** 4.3 PatchPlanner
 - **Implementation Status:** ❌ Missing
-- **Implementation Details:** No references to batch processing in current codebase.
+- **Implementation Details:** Search returned no references to batch processing in `server/` (`rg 'batch' server` produced no output).
 - **Gap Description:** Analyzer and patch planner do not handle multiple intentions simultaneously.
 
 #### Requirement: `/batch/expand` administrative endpoint
@@ -40,6 +40,7 @@
 #### Requirement: Configurable feature flag `CSE_FEATURE_BATCH`
 - **Design Specification:** design.md line 352
 - **Implementation Status:** ❌ Missing
+- **Implementation Details:** Flag defined in setup scripts but never used by server code (`toolchain.md` line 505; `scripts/setup.sh` line 72).
 - **Current Performance:** Not applicable; feature absent.
 - **Gap Description:** Environment variable defined but unused by server code.
 
