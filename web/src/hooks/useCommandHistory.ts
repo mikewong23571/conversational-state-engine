@@ -16,14 +16,14 @@ export interface CommandHistoryState<T> {
 
 export function useCommandHistory<T>(
   initialState: T,
-  apply: (state: T, patch: any) => T,
-  reverse: (state: T, patch: any) => T
+  apply: (state: T, patch: unknown) => T,
+  reverse: (state: T, patch: unknown) => T
 ) {
   const [state, setState] = useState<T>(initialState);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<unknown[]>([]);
   const [position, setPosition] = useState(-1);
 
-  const execute = useCallback((patch: any) => {
+  const execute = useCallback((patch: unknown) => {
     // Apply the patch
     const nextState = apply(state, patch);
     setState(nextState);

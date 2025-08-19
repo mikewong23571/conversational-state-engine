@@ -8,17 +8,17 @@ interface EnhancedConflict {
   suggestion?: {
     description: string;
     auto_fix: boolean;
-    patches?: any[];
+    patches?: unknown[];
   };
   affected_paths: string[];
   examples?: string[];
 }
 
-interface EnhancedImpactAnalysis {
+interface EnhancedImpactAnalysisData {
   affected_paths: string[];
   risk_level: 'low' | 'medium' | 'high';
   semantic_conflicts: EnhancedConflict[];
-  suggested_alternatives?: any[];
+  suggested_alternatives?: unknown[];
   risk_explanation?: string;
   dependency_analysis?: {
     breaking_changes: string[];
@@ -28,7 +28,7 @@ interface EnhancedImpactAnalysis {
 }
 
 interface EnhancedImpactAnalysisProps {
-  impact: EnhancedImpactAnalysis;
+  impact: EnhancedImpactAnalysisData;
   onApplySuggestion?: (conflictIndex: number) => void;
 }
 

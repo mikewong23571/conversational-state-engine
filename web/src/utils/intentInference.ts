@@ -129,7 +129,7 @@ export function inferIntentFromText(text: string): InferredIntent {
   const overallConfidence = (actionResult.confidence + targetResult.confidence) / 2;
 
   return {
-    action: actionResult.action as any,
+    action: actionResult.action as 'add' | 'edit' | 'delete' | 'set' | 'move',
     target_path: targetResult.path,
     confidence: overallConfidence,
     reasoning: `${actionResult.reasoning}; 推断目标: ${targetResult.path}`

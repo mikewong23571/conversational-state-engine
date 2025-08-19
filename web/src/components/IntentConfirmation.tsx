@@ -7,7 +7,7 @@ interface IntentConfirmationProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  preliminaryImpact?: any; // 初步影响分析
+  preliminaryImpact?: unknown; // 初步影响分析
 }
 
 export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({

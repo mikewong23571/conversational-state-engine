@@ -7,23 +7,23 @@ import { Operation, applyPatch } from 'fast-json-patch';
 export interface PatchTestResult {
   success: boolean;
   error?: string;
-  resultState?: any;
-  originalState: any;
+  resultState?: unknown;
+  originalState: unknown;
   patch: Operation;
 }
 
 /**
  * 测试单个补丁是否能正确应用
  */
-export function testPatch(state: any, patch: Operation): PatchTestResult {
+export function testPatch(state: unknown, patch: Operation): PatchTestResult {
   const testState = JSON.parse(JSON.stringify(state));
 
-  try {
-    // 如果补丁路径缺少 /data 前缀，补上以适配完整状态
-    const normalizedPatch = patch.path.startsWith('/data')
-      ? patch
-      : { ...patch, path: `/data${patch.path}` };
+  // 如果补丁路径缺少 /data 前缀，补上以适配完整状态
+  const normalizedPatch = patch.path.startsWith('/data')
+    ? patch
+    : { ...patch, path: `/data${patch.path}` };
 
+  try {
     console.log('🧪 Testing patch:', normalizedPatch);
     console.log('🧪 Initial state:', JSON.stringify(testState, null, 2));
 
@@ -55,10 +55,10 @@ export function testPatch(state: any, patch: Operation): PatchTestResult {
 /**
  * 测试多个补丁的顺序应用
  */
-export function testPatches(state: any, patches: Operation[]): {
+export function testPatches(state: unknown, patches: Operation[]): {
   success: boolean;
   results: PatchTestResult[];
-  finalState?: any;
+  finalState?: unknown;
 } {
   let currentState = JSON.parse(JSON.stringify(state));
   const results: PatchTestResult[] = [];
@@ -87,7 +87,7 @@ export function testPatches(state: any, patches: Operation[]): {
 /**
  * 验证状态结构是否支持给定的补丁路径
  */
-export function validatePatchPath(state: any, path: string): {
+export function validatePatchPath(state: unknown, path: string): {
   valid: boolean;
   issue?: string;
   suggestion?: string;
@@ -165,7 +165,7 @@ export function validatePatchPath(state: any, path: string): {
 /**
  * 为常见错误提供修复建议
  */
-export function suggestPatchFix(state: any, patch: Operation, error: string): string[] {
+export function suggestPatchFix(state: unknown, patch: Operation, error: string): string[] {
   const suggestions: string[] = [];
 
   // 检查路径

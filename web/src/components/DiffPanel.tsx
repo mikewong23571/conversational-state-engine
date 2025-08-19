@@ -8,18 +8,18 @@ interface Conflict {
   rule: string;
   severity: 'low' | 'medium' | 'high';
   message: string;
-  suggestion?: any;
+  suggestion?: unknown;
 }
 
 interface ImpactAnalysis {
   affected_paths: string[];
   risk_level: 'low' | 'medium' | 'high';
   semantic_conflicts: Conflict[];
-  suggested_alternatives?: any[];
+  suggested_alternatives?: unknown[];
 }
 
 interface DiffPanelProps {
-  currentState: any;
+  currentState: Record<string, unknown>;
   proposedPatches: Patch[];
   impact: ImpactAnalysis;
   onConfirm: (selectedIndices: number[]) => void;

@@ -12,24 +12,30 @@ import { testPatches, suggestPatchFix } from './utils/patchTester';
 
 type Patch = Operation;
 
+interface Suggestion {
+  description: string;
+  auto_fix: boolean;
+  patches?: Patch[];
+}
+
 interface Conflict {
   type: string;
   rule: string;
   severity: 'low' | 'medium' | 'high';
   message: string;
-  suggestion?: any;
+  suggestion?: Suggestion;
 }
 
 interface ImpactAnalysis {
   affected_paths: string[];
   risk_level: 'low' | 'medium' | 'high';
   semantic_conflicts: Conflict[];
-  suggested_alternatives?: any[];
+  suggested_alternatives?: unknown[];
 }
 
 interface SessionState {
   id: string;
-  state: any;
+  state: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -39,23 +45,23 @@ interface API {
 
   createSession(): Promise<SessionState>;
 
-  getSessionState(sessionId: string): Promise<any>;
+  getSessionState(sessionId: string): Promise<Record<string, unknown>>;
 
   submitIntent(sessionId: string, message: string): Promise<{
-    intentions: any[];
+    intentions: unknown[];
     patches: Patch[];
     impact: ImpactAnalysis;
   }>;
 
   confirmPatches(sessionId: string, patchIndices: number[]): Promise<{
     success: boolean;
-    new_state: any;
+    new_state: Record<string, unknown>;
     applied_patches: Patch[];
   }>;
 
   commitState(sessionId: string): Promise<{
     success: boolean;
-    artifacts: any[];
+    artifacts: unknown[];
   }>;
 }
 
@@ -132,7 +138,7 @@ class APIClient implements API {
     };
   }
 
-  async getSessionState(sessionId: string): Promise<any> {
+  async getSessionState(sessionId: string): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/state`, {
       headers: this.getAuthHeaders()
     });
@@ -141,7 +147,7 @@ class APIClient implements API {
   }
 
   async submitIntent(sessionId: string, message: string): Promise<{
-    intentions: any[];
+    intentions: unknown[];
     patches: Patch[];
     impact: ImpactAnalysis;
   }> {
@@ -156,7 +162,7 @@ class APIClient implements API {
 
   async confirmPatches(_sessionId: string, _patchIndices: number[]): Promise<{
     success: boolean;
-    new_state: any;
+    new_state: Record<string, unknown>;
     applied_patches: Patch[];
   }> {
     // Note: This endpoint doesn't exist in the backend yet
@@ -165,7 +171,7 @@ class APIClient implements API {
     throw new Error('Patch confirmation endpoint not implemented. Use commit instead.');
   }
 
-  async createIntentionSet(sessionId: string, intentions: any): Promise<{intention_set_id: string}> {
+  async createIntentionSet(sessionId: string, intentions: unknown): Promise<{intention_set_id: string}> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/intents`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -189,7 +195,7 @@ class APIClient implements API {
     return response.json();
   }
 
-  async confirmIntent(sessionId: string, proposalId: string): Promise<any> {
+  async confirmIntent(sessionId: string, proposalId: string): Promise<unknown> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/confirm-intent`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -199,7 +205,7 @@ class APIClient implements API {
     return response.json();
   }
 
-  async confirmChanges(sessionId: string, proposalId: string, selectedIndices: number[]): Promise<any> {
+  async confirmChanges(sessionId: string, proposalId: string, selectedIndices: number[]): Promise<unknown> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/confirm-changes`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -212,7 +218,7 @@ class APIClient implements API {
     return response.json();
   }
 
-  async confirmSideEffects(sessionId: string, proposalId: string, applyAutoFixes: boolean = false): Promise<any> {
+  async confirmSideEffects(sessionId: string, proposalId: string, applyAutoFixes: boolean = false): Promise<unknown> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/confirm-side-effects`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -227,7 +233,7 @@ class APIClient implements API {
 
   async commitState(sessionId: string, proposalId?: string): Promise<{
     success: boolean;
-    artifacts: any[];
+    artifacts: unknown[];
   }> {
     if (!proposalId) {
       throw new Error('Proposal ID required for commit');
@@ -251,7 +257,7 @@ class APIClient implements API {
 const App: React.FC = () => {
   const [api] = useState(new APIClient());
   const [session, setSession] = useState<SessionState | null>(null);
-  const [currentState, setCurrentState] = useState<any>({
+  const [currentState, setCurrentState] = useState<Record<string, unknown>>({
     version: "v1",
     schema_version: "1.0.0",
     data: {
@@ -278,7 +284,7 @@ const App: React.FC = () => {
   const confirmation = useConfirmationFlow();
 
   // Artifacts state
-  const [artifacts, setArtifacts] = useState<any[]>([]);
+  const [artifacts, setArtifacts] = useState<unknown[]>([]);
 
   // Debug logging for state changes
   useEffect(() => {
@@ -310,12 +316,13 @@ const App: React.FC = () => {
         console.log('Setting current state...');
         setCurrentState(newSession.state);
         console.log('Session state update completed');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to initialize session:', err);
-        if (err.message && err.message.includes('Insufficient permissions')) {
+        const error = err as Error;
+        if (error.message && error.message.includes('Insufficient permissions')) {
           setError('Your account does not have permission to create sessions. Please register with a different email or contact an administrator.');
         } else {
-          setError(`Failed to initialize session: ${err.message}`);
+          setError(`Failed to initialize session: ${error.message}`);
         }
       } finally {
         setLoading(false);
@@ -344,9 +351,10 @@ const App: React.FC = () => {
       setIsLoggedIn(true);
       setShowAuth(false);
       console.log('Login flow completed, session will be initialized by useEffect');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login failed:', err);
-      setError(err.message || 'Login failed');
+      const error = err as Error;
+      setError(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -363,9 +371,10 @@ const App: React.FC = () => {
       setIsLoggedIn(true);
       setShowAuth(false);
       console.log('Registration flow completed, session will be initialized by useEffect');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration failed:', err);
-      setError(err.message || 'Registration failed');
+      const error = err as Error;
+      setError(error.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -405,9 +414,9 @@ const App: React.FC = () => {
       // Parse user input to determine if it's a command or natural language
       const parseResult = parseUserInput(messageInput);
 
-      let intent: any;
+      let intent: Record<string, unknown>;
       let patches: Operation[] = [];
-      let impact: any = { affected_paths: [], risk_level: 'low', semantic_conflicts: [] };
+      let impact: ImpactAnalysis = { affected_paths: [], risk_level: 'low', semantic_conflicts: [] };
 
       if (parseResult.type === 'command' && parseResult.command) {
         // Handle structured command
@@ -525,7 +534,7 @@ const App: React.FC = () => {
         intent = {
           action: inferredIntent.action,
           target_path: inferredIntent.target_path,
-          value: 'value' in (patches[0] || {}) ? (patches[0] as any).value : undefined,
+          value: 'value' in (patches[0] || {}) ? (patches[0] as { value?: unknown }).value : undefined,
           reason: `${inferredIntent.reasoning} | 用户请求: ${messageInput}`,
           confidence: inferredIntent.confidence
         };
@@ -564,11 +573,11 @@ const App: React.FC = () => {
           ? '中等风险操作，建议仔细评估后执行'
           : '低风险操作，对系统影响较小',
         dependency_analysis: {
-          breaking_changes: impact.semantic_conflicts?.filter((c: any) => c.severity === 'high')?.map((c: any) => c.message) || [],
+          breaking_changes: impact.semantic_conflicts?.filter((c: Conflict) => c.severity === 'high')?.map((c: Conflict) => c.message) || [],
           cascading_effects: impact.affected_paths || [],
-          validation_warnings: impact.semantic_conflicts?.filter((c: any) => c.severity === 'low')?.map((c: any) => c.message) || []
+          validation_warnings: impact.semantic_conflicts?.filter((c: Conflict) => c.severity === 'low')?.map((c: Conflict) => c.message) || []
         },
-        semantic_conflicts: impact.semantic_conflicts?.map((conflict: any) => ({
+        semantic_conflicts: impact.semantic_conflicts?.map((conflict: Conflict) => ({
           ...conflict,
           affected_paths: impact.affected_paths || ['/stories'],
           examples: conflict.rule === 'auth_method_conflict'
@@ -588,7 +597,7 @@ const App: React.FC = () => {
 
       setProposedPatches(patches);
       setImpact(enhancedImpact);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to process intent:', err);
       setError('Failed to process intent');
     } finally {
@@ -633,9 +642,10 @@ const App: React.FC = () => {
         selectedIndices: proposedPatches.map((_, i) => i), // Select all by default
         impact: previewImpact
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to confirm intent:', err);
-      setError(`Failed to confirm intent: ${err.message}`);
+      const error = err as Error;
+      setError(`Failed to confirm intent: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -669,9 +679,10 @@ const App: React.FC = () => {
       };
 
       confirmation.actions.setSideEffectAnalysis(sideEffects);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to confirm changes:', err);
-      setError(`Failed to confirm changes: ${err.message}`);
+      const error = err as Error;
+      setError(`Failed to confirm changes: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -702,9 +713,10 @@ const App: React.FC = () => {
 
       // Show a message that changes are ready to commit
       console.log('Side effects confirmed. Ready to commit changes.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to confirm side effects:', err);
-      setError(`Failed to confirm side effects: ${err.message}`);
+      const error = err as Error;
+      setError(`Failed to confirm side effects: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -749,7 +761,7 @@ const App: React.FC = () => {
           setArtifacts(response.artifacts);
 
           // Show success message
-          alert(`Commit successful! Generated ${response.artifacts.length} artifacts.`);
+          window.alert(`Commit successful! Generated ${response.artifacts.length} artifacts.`);
         } else {
           setError('Backend commit failed');
         }
@@ -786,11 +798,12 @@ const App: React.FC = () => {
         setArtifacts([]);
 
         // Show success message
-        alert('Local changes applied successfully! (Demo mode - changes not persisted to backend)');
+        window.alert('Local changes applied successfully! (Demo mode - changes not persisted to backend)');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Commit failed:', err);
-      setError(`Commit failed: ${err.message}`);
+      const error = err as Error;
+      setError(`Commit failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
