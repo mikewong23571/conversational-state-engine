@@ -1,11 +1,12 @@
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 DB_PATH = "state_engine.db"
 
 
 @contextmanager
-def get_db():
+def get_db() -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:

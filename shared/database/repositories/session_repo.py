@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ..connection import get_db
 
 
@@ -12,7 +14,7 @@ def create_session(session_id: str, initial_version: str = "v1") -> None:
         conn.commit()
 
 
-def get_session(session_id: str) -> dict | None:
+def get_session(session_id: str) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
             "SELECT * FROM sessions WHERE session_id = ?", (session_id,)

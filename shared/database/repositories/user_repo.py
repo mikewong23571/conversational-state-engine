@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ..connection import get_db
 
 
-def get_user_by_email(email: str) -> dict | None:
+def get_user_by_email(email: str) -> dict[str, Any] | None:
     with get_db() as conn:
         row = conn.execute(
             "SELECT * FROM users WHERE email = ? AND is_active = TRUE",
