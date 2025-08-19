@@ -95,6 +95,31 @@ def init_auth_db():
         )
         conn.commit()
 
+        # Seed default admin user for tests and development
+        existing = conn.execute(
+            "SELECT user_id FROM users WHERE email = ?",
+            ("test@example.com",),
+        ).fetchone()
+        if not existing:
+            import json
+            import uuid
+
+            hashed_password = get_password_hash("test123")
+            permissions = ["read", "write", "delete", "manage_users"]
+            user_id = f"user_{uuid.uuid4().hex[:8]}"
+            conn.execute(
+                """INSERT INTO users (user_id, email, hashed_password, role, permissions)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (
+                    user_id,
+                    "test@example.com",
+                    hashed_password,
+                    "admin",
+                    json.dumps(permissions),
+                ),
+            )
+            conn.commit()
+
 
 # Password utilities
 def verify_password(plain_password: str, hashed_password: str) -> bool:
