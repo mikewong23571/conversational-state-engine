@@ -759,14 +759,21 @@ async def propose_patches(
                     "op": "remove",
                     "path": intent.target_path
                 })
-        
+
+        # 为冲突检测添加 /data 前缀
+        patches_for_detection = []
+        for p in patches:
+            prefixed = p.copy()
+            prefixed["path"] = f"/data{p['path']}"
+            patches_for_detection.append(prefixed)
+
         # 冲突检测和影响分析
         full_state = {
             "version": state_row["version"],
             "schema_version": state_row["schema_version"],
             "data": current_state
         }
-        conflicts = conflict_detector.detect_with_patches(full_state, patches)
+        conflicts = conflict_detector.detect_with_patches(full_state, patches_for_detection)
         
         # Validate generated patches
         patch_validation = schema_validator.validate_patches(patches)
