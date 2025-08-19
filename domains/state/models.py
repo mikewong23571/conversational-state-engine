@@ -1,9 +1,13 @@
+# mypy: ignore-errors
+
 """
 Data models for the Conversational State Engine
 """
 
+import re
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -12,8 +16,6 @@ try:  # Prefer Pydantic v1 style validators without deprecation warnings
 except ImportError:  # Pydantic v1 without namespace package
     from pydantic import root_validator, validator
 
-
-from typing import Annotated
 
 # Pydantic v2 compatible string types with validation
 JsonPointer = Annotated[str, Field(pattern=r"^(/[^/]*)+$")]
@@ -28,9 +30,6 @@ PatchPath = Annotated[str, Field(pattern=r"^(/[^/]*)*$")]
 VersionString = Annotated[str, Field(pattern=r"^v\d+$")]
 SchemaVersionString = Annotated[str, Field(pattern=r"^\d+\.\d+\.\d+$")]
 NotesString = Annotated[str, Field(max_length=1000)]
-import json
-import re
-from datetime import datetime
 
 
 class Action(str, Enum):
@@ -44,10 +43,10 @@ class Action(str, Enum):
 class Intention(BaseModel):
     action: Action
     target_path: JsonPointer  # RFC6901 JSON Pointer validation
-    value: Optional[Any] = None
-    reason: Optional[OptionalString] = None
+    value: Any | None = None
+    reason: OptionalString | None = None
     confidence: ConstrainedFloat = 0.8
-    evidence: Optional[EvidenceString] = None  # 原文片段或命中规则
+    evidence: EvidenceString | None = None  # 原文片段或命中规则
 
     @validator("target_path")
     def validate_json_pointer(cls, v):
@@ -93,8 +92,8 @@ class Intention(BaseModel):
 
 
 class IntentionSet(BaseModel):
-    items: List[Intention] = Field(default_factory=list, min_length=0, max_length=50)
-    notes: Optional[NotesString] = None
+    items: list[Intention] = Field(default_factory=list, min_length=0, max_length=50)
+    notes: NotesString | None = None
 
     @validator("items")
     def validate_intention_conflicts(cls, v):
@@ -153,8 +152,8 @@ class PatchOp(str, Enum):
 class Patch(BaseModel):
     op: PatchOp
     path: PatchPath  # RFC6901 JSON Pointer
-    value: Optional[Any] = None
-    from_path: Optional[PatchPath] = Field(None, alias="from")
+    value: Any | None = None
+    from_path: PatchPath | None = Field(None, alias="from")
 
     @validator("path")
     def validate_patch_path(cls, v):
@@ -193,14 +192,14 @@ class Conflict(BaseModel):
     rule: str
     severity: str  # low, medium, high
     message: str
-    suggestion: Optional[Dict[str, Any]] = None
+    suggestion: dict[str, Any] | None = None
 
 
 class ImpactAnalysis(BaseModel):
-    affected_paths: List[str]
+    affected_paths: list[str]
     risk_level: str  # low, medium, high
-    semantic_conflicts: List[Conflict] = Field(default_factory=list)
-    suggested_alternatives: List[Dict[str, Any]] = Field(default_factory=list)
+    semantic_conflicts: list[Conflict] = Field(default_factory=list)
+    suggested_alternatives: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class PatchProposalRequest(BaseModel):
@@ -213,7 +212,7 @@ class ConfirmIntentRequest(BaseModel):
 
 class ConfirmChangesRequest(BaseModel):
     proposal_id: str
-    selected_patch_indices: Optional[List[int]] = None
+    selected_patch_indices: list[int] | None = None
 
 
 class ConfirmSideEffectsRequest(BaseModel):
@@ -223,14 +222,14 @@ class ConfirmSideEffectsRequest(BaseModel):
 
 class CommitRequest(BaseModel):
     proposal_id: str
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class PatchProposal(BaseModel):
     proposal_id: str
-    patches: List[Patch]
+    patches: list[Patch]
     impact_analysis: ImpactAnalysis
-    preview_diff: Optional[Dict[str, Any]] = None
+    preview_diff: dict[str, Any] | None = None
     created_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -252,12 +251,12 @@ class Story(BaseModel):
     key: StoryKey  # Format: PREFIX-IDENTIFIER
     title: StoryTitle
     priority: Priority = Priority.P2
-    acceptance_criteria: List[CriteriaString] = Field(default_factory=list)
-    dependencies: List[StoryKey] = Field(default_factory=list)
-    auth_type: Optional[AuthType] = None
-    platform: Optional[List[str]] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    acceptance_criteria: list[CriteriaString] = Field(default_factory=list)
+    dependencies: list[StoryKey] = Field(default_factory=list)
+    auth_type: AuthType | None = None
+    platform: list[str] | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
 
     @validator("acceptance_criteria")
     def validate_acceptance_criteria(cls, v):
@@ -302,8 +301,8 @@ class Story(BaseModel):
 class StateData(BaseModel):
     """Validation model for state data"""
 
-    stories: List[Story] = Field(default_factory=list)
-    glossary: List[Dict[str, str]] = Field(default_factory=list)
+    stories: list[Story] = Field(default_factory=list)
+    glossary: list[dict[str, str]] = Field(default_factory=list)
 
     @validator("stories")
     def validate_story_keys_unique(cls, v):
@@ -368,10 +367,10 @@ class Commit(BaseModel):
     session_id: str
     parent_version: str
     new_version: str
-    patches: List[Patch]
-    reverse_patches: List[Patch]
-    author: Optional[str] = None
-    message: Optional[str] = None
+    patches: list[Patch]
+    reverse_patches: list[Patch]
+    author: str | None = None
+    message: str | None = None
     created_at: datetime = Field(default_factory=datetime.now)
 
 

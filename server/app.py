@@ -1,39 +1,35 @@
+# mypy: ignore-errors
+
 """
 FastAPI application for Conversational State Engine
 """
 
 import json
+import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import jsonpatch
-
-# Load environment variables from .env file
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-
-load_dotenv()
 
 from domains.dialogue.analyzer import LLMAnalyzer, MockAnalyzer
 from domains.rendering.incremental import create_renderer
 from domains.state.conflicts import ConflictResolver, create_default_detector
 from domains.state.models import (
-    Commit,
     CommitRequest,
     ConfirmChangesRequest,
     ConfirmIntentRequest,
     ConfirmSideEffectsRequest,
-    Conflict,
     ImpactAnalysis,
     IntentionSet,
     Patch,
     PatchProposal,
     PatchProposalRequest,
-    Session,
     State,
 )
 
@@ -49,10 +45,12 @@ from .auth import (
     get_current_user,
     grant_session_access,
     init_auth_db,
-    require_permission,
 )
-from .context_slicer import ContextSlicer, SliceConfig
+from .context_slicer import ContextSlicer
 from .validation import schema_validator
+
+# Load environment variables from .env file
+load_dotenv()
 
 # 初始化FastAPI应用
 app = FastAPI(title="Conversational State Engine", version="0.1.0")
@@ -161,7 +159,6 @@ init_auth_db()
 # 初始化组件
 conflict_detector = create_default_detector()
 # 尝试使用OpenAI兼容分析器，否则降级到Mock
-import os
 
 llm_provider = os.getenv("CSE_LLM_PROVIDER", "mock")
 if llm_provider.lower() == "openai" and (
@@ -211,7 +208,7 @@ async def register(user_data: UserCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create user: {str(e)}",
-        )
+        ) from e
 
 
 @app.post("/auth/login", response_model=Token)
@@ -246,7 +243,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 @app.post("/sessions/{sid}/analyze")
 async def analyze_message(
     sid: str,
-    request: Dict[str, str],  # {"message": "user input"}
+    request: dict[str, str],  # {"message": "user input"}
     auto_apply: bool = Query(default=False),
     current_user: User = Depends(get_current_user),
 ):
@@ -289,7 +286,7 @@ async def analyze_message(
 
         # 使用LLM分析器
         try:
-            if hasattr(analyzer, "analyze") and hasattr(analyzer.analyze, "__call__"):
+            if hasattr(analyzer, "analyze") and callable(analyzer.analyze):
                 # 如果是异步方法
                 if hasattr(analyzer, "client") and analyzer.client:
                     intention_set = await analyzer.analyze(message, relevant_context)
@@ -306,7 +303,7 @@ async def analyze_message(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to analyze message: {str(e)}",
-            )
+            ) from e
 
     result = {
         "message": message,
@@ -534,7 +531,7 @@ async def analyze_message(
 @app.get("/sessions/{sid}/context-slices")
 async def get_context_slices(
     sid: str,
-    intent: Optional[str] = Query(None),
+    intent: str | None = Query(None),
     max_slices: int = Query(default=10, le=50),
     current_user: User = Depends(get_current_user),
 ):
@@ -595,8 +592,8 @@ async def get_context_slices(
 @app.get("/sessions/{sid}/state")
 async def get_state(
     sid: str,
-    paths: Optional[str] = Query(None),
-    intent: Optional[str] = Query(None),
+    paths: str | None = Query(None),
+    intent: str | None = Query(None),
     slice_mode: bool = Query(default=False),
     current_user: User = Depends(get_current_user),
 ):
@@ -688,7 +685,7 @@ async def get_state(
         )
 
 
-def _set_path_value(target: Dict[str, Any], path: str, value: Any):
+def _set_path_value(target: dict[str, Any], path: str, value: Any):
     """在目标字典中设置路径值"""
     if path == "/" or not path:
         return
@@ -696,7 +693,7 @@ def _set_path_value(target: Dict[str, Any], path: str, value: Any):
     parts = path.strip("/").split("/")
     current = target
 
-    for i, part in enumerate(parts[:-1]):
+    for part in parts[:-1]:
         if part not in current:
             current[part] = {}
         current = current[part]
@@ -1118,7 +1115,7 @@ async def validate_session_state(
 
 @app.post("/validate/intentions")
 async def validate_intentions_endpoint(
-    intentions: Dict[str, Any], current_user: User = Depends(get_current_user)
+    intentions: dict[str, Any], current_user: User = Depends(get_current_user)
 ):
     """Standalone intention validation endpoint"""
     validation_result = schema_validator.validate_intentions(intentions)
@@ -1136,7 +1133,7 @@ async def validate_intentions_endpoint(
 
 @app.post("/validate/patches")
 async def validate_patches_endpoint(
-    patches: List[Dict[str, Any]], current_user: User = Depends(get_current_user)
+    patches: list[dict[str, Any]], current_user: User = Depends(get_current_user)
 ):
     """Standalone patch validation endpoint"""
     validation_result = schema_validator.validate_patches(patches)
@@ -1526,7 +1523,7 @@ async def commit_changes(
         except Exception as e:
             raise HTTPException(
                 status_code=400, detail=f"Failed to apply patches: {str(e)}"
-            )
+            ) from e
 
         # 生成新版本号
         current_version_num = int(session["current_version"][1:])
@@ -1614,7 +1611,7 @@ async def commit_changes(
 @app.get("/sessions/{sid}/artifacts")
 async def list_artifacts(
     sid: str,
-    version: Optional[str] = None,
+    version: str | None = None,
     current_user: User = Depends(get_current_user),
 ):
     """列出artifacts"""

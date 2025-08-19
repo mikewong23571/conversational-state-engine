@@ -3,7 +3,6 @@ Unit tests for sessions - using TestClient (no real server)
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
 # Mark all tests in this file as unit tests
 pytestmark = pytest.mark.unit
