@@ -3,7 +3,7 @@ Conflict detection engine with structural and logical rules
 """
 from dataclasses import dataclass
 from typing import Callable, List, Dict, Any, Optional
-from models import Conflict
+from .models import Conflict
 import jsonpatch
 import json
 
@@ -245,43 +245,277 @@ def create_default_detector() -> ConflictDetector:
 class ConflictResolver:
     """基于冲突生成自动修复patches"""
     
-    def suggest_fixes(self, conflicts: List[Conflict]) -> List[dict]:
+    def __init__(self):
+        self.resolution_strategies = {
+            "authentication_method_conflict": self._resolve_auth_conflict,
+            "dependency_priority_conflict": self._resolve_priority_conflict,
+            "timeline_inconsistency": self._resolve_timeline_conflict,
+            "structural_conflict": self._resolve_structural_conflict
+        }
+    
+    def suggest_fixes(self, conflicts: List[Conflict], state: dict = None) -> List[dict]:
         """为冲突生成修复patches"""
         fixes = []
         
         for conflict in conflicts:
-            suggestion = conflict.suggestion
-            if not suggestion:
-                continue
+            # 根据冲突类型选择解决策略
+            conflict_type = conflict.type
+            if conflict_type in self.resolution_strategies:
+                strategy_fixes = self.resolution_strategies[conflict_type](conflict, state)
+                fixes.extend(strategy_fixes)
+            else:
+                # 通用修复策略
+                generic_fixes = self._generic_fix(conflict)
+                fixes.extend(generic_fixes)
+        
+        return fixes
+    
+    def _resolve_auth_conflict(self, conflict: Conflict, state: dict = None) -> List[dict]:
+        """解决认证方法冲突"""
+        fixes = []
+        
+        if not conflict.suggestion:
+            return fixes
+        
+        action = conflict.suggestion.get("action")
+        
+        if action == "remove_phrase":
+            # 移除冲突的认证方法描述
+            target_path = conflict.suggestion.get("from")
+            phrase = conflict.suggestion.get("target")
             
-            action = suggestion.get("action")
+            if target_path and phrase and state:
+                current_value = self._get_path_value(state, target_path)
+                if isinstance(current_value, str) and phrase in current_value:
+                    new_value = current_value.replace(phrase, "").strip()
+                    # 清理多余的空格和标点
+                    new_value = " ".join(new_value.split())
+                    
+                    fixes.append({
+                        "op": "replace",
+                        "path": target_path,
+                        "value": new_value,
+                        "reason": f"Removed conflicting authentication method: {phrase}"
+                    })
+        
+        elif action == "set_auth_type":
+            # 设置统一的认证类型
+            target_path = conflict.suggestion.get("target")
+            auth_type = conflict.suggestion.get("to")
             
-            if action == "remove_phrase":
-                # 移除特定短语
-                target = suggestion.get("from")
-                phrase = suggestion.get("target")
-                # 这里需要更复杂的实现来定位并移除短语
-                pass
-            
-            elif action == "bump_priority":
-                # 提升优先级
-                target = suggestion.get("target")
-                new_priority = suggestion.get("to")
-                # 需要找到story并更新优先级
-                pass
-            
-            elif action == "swap_dates":
-                # 交换日期
-                pass
-            
-            elif action == "add_field":
-                # 添加缺失字段
-                target = suggestion.get("target")
-                template = suggestion.get("template")
+            if target_path and auth_type:
                 fixes.append({
                     "op": "add",
-                    "path": target,
-                    "value": template
+                    "path": f"{target_path}/auth_type",
+                    "value": auth_type,
+                    "reason": f"Set consistent auth type to {auth_type}"
                 })
         
         return fixes
+    
+    def _resolve_priority_conflict(self, conflict: Conflict, state: dict = None) -> List[dict]:
+        """解决依赖优先级冲突"""
+        fixes = []
+        
+        if not conflict.suggestion:
+            return fixes
+        
+        action = conflict.suggestion.get("action")
+        
+        if action == "bump_priority":
+            target_path = conflict.suggestion.get("target")
+            new_priority = conflict.suggestion.get("to")
+            
+            if target_path and new_priority:
+                fixes.append({
+                    "op": "replace",
+                    "path": f"{target_path}/priority",
+                    "value": new_priority,
+                    "reason": f"Bumped priority to {new_priority} to resolve dependency conflict"
+                })
+        
+        elif action == "add_dependency":
+            # 添加缺失的依赖
+            target_path = conflict.suggestion.get("target")
+            dependency = conflict.suggestion.get("dependency")
+            
+            if target_path and dependency:
+                # 获取当前依赖列表
+                current_deps = self._get_path_value(state, f"{target_path}/dependencies") or []
+                if dependency not in current_deps:
+                    new_deps = current_deps + [dependency]
+                    fixes.append({
+                        "op": "replace",
+                        "path": f"{target_path}/dependencies",
+                        "value": new_deps,
+                        "reason": f"Added missing dependency: {dependency}"
+                    })
+        
+        return fixes
+    
+    def _resolve_timeline_conflict(self, conflict: Conflict, state: dict = None) -> List[dict]:
+        """解决时间线冲突"""
+        fixes = []
+        
+        if not conflict.suggestion:
+            return fixes
+        
+        action = conflict.suggestion.get("action")
+        
+        if action == "swap_dates":
+            # 交换开始和结束日期
+            start_path = conflict.suggestion.get("start_path")
+            end_path = conflict.suggestion.get("end_path")
+            
+            if start_path and end_path and state:
+                start_date = self._get_path_value(state, start_path)
+                end_date = self._get_path_value(state, end_path)
+                
+                if start_date and end_date:
+                    fixes.extend([
+                        {
+                            "op": "replace",
+                            "path": start_path,
+                            "value": end_date,
+                            "reason": "Swapped dates to fix timeline inconsistency"
+                        },
+                        {
+                            "op": "replace",
+                            "path": end_path,
+                            "value": start_date,
+                            "reason": "Swapped dates to fix timeline inconsistency"
+                        }
+                    ])
+        
+        elif action == "adjust_date":
+            # 调整单个日期
+            target_path = conflict.suggestion.get("target")
+            new_date = conflict.suggestion.get("to")
+            
+            if target_path and new_date:
+                fixes.append({
+                    "op": "replace",
+                    "path": target_path,
+                    "value": new_date,
+                    "reason": "Adjusted date to resolve timeline conflict"
+                })
+        
+        return fixes
+    
+    def _resolve_structural_conflict(self, conflict: Conflict, state: dict = None) -> List[dict]:
+        """解决结构性冲突"""
+        fixes = []
+        
+        if not conflict.suggestion:
+            return fixes
+        
+        action = conflict.suggestion.get("action")
+        
+        if action == "add_field":
+            # 添加缺失字段
+            target_path = conflict.suggestion.get("target")
+            template = conflict.suggestion.get("template")
+            
+            if target_path and template:
+                fixes.append({
+                    "op": "add",
+                    "path": target_path,
+                    "value": template,
+                    "reason": "Added missing required field"
+                })
+        
+        elif action == "fix_type":
+            # 修复字段类型
+            target_path = conflict.suggestion.get("target")
+            new_value = conflict.suggestion.get("to")
+            
+            if target_path and new_value is not None:
+                fixes.append({
+                    "op": "replace",
+                    "path": target_path,
+                    "value": new_value,
+                    "reason": "Fixed field type to match schema"
+                })
+        
+        return fixes
+    
+    def _generic_fix(self, conflict: Conflict) -> List[dict]:
+        """通用修复策略"""
+        fixes = []
+        
+        if not conflict.suggestion:
+            return fixes
+        
+        suggestion = conflict.suggestion
+        action = suggestion.get("action")
+        
+        if action == "add_field":
+            target = suggestion.get("target")
+            template = suggestion.get("template")
+            if target and template:
+                fixes.append({
+                    "op": "add",
+                    "path": target,
+                    "value": template,
+                    "reason": f"Generic fix: added missing field at {target}"
+                })
+        
+        elif action == "set_value":
+            target = suggestion.get("target")
+            value = suggestion.get("to")
+            if target and value is not None:
+                fixes.append({
+                    "op": "replace",
+                    "path": target,
+                    "value": value,
+                    "reason": f"Generic fix: set value at {target}"
+                })
+        
+        return fixes
+    
+    def _get_path_value(self, data: dict, path: str) -> any:
+        """根据路径获取值（简化版JSON Pointer）"""
+        if not path or path == "/":
+            return data
+        
+        parts = path.strip("/").split("/")
+        current = data
+        
+        try:
+            for part in parts:
+                if isinstance(current, dict):
+                    current = current.get(part)
+                elif isinstance(current, list) and part.isdigit():
+                    current = current[int(part)]
+                else:
+                    return None
+            return current
+        except (KeyError, IndexError, TypeError):
+            return None
+    
+    def prioritize_fixes(self, fixes: List[dict]) -> List[dict]:
+        """根据重要性对修复方案排序"""
+        def get_priority_score(fix):
+            reason = fix.get("reason", "")
+            op = fix.get("op", "")
+            
+            # 优先级评分
+            score = 0
+            
+            # 操作类型权重
+            if op == "replace":
+                score += 10
+            elif op == "add":
+                score += 8
+            elif op == "remove":
+                score += 5
+            
+            # 关键词加权
+            high_priority_keywords = ["priority", "auth", "dependency", "required"]
+            for keyword in high_priority_keywords:
+                if keyword in reason.lower():
+                    score += 5
+            
+            return score
+        
+        return sorted(fixes, key=get_priority_score, reverse=True)

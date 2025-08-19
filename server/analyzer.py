@@ -2,8 +2,10 @@
 Mock analyzer for dialogue to intention conversion
 """
 import re
+import json
+import time
 from typing import List, Dict, Any, Optional
-from models import IntentionSet, Intention, Action
+from .models import IntentionSet, Intention, Action
 
 class MockAnalyzer:
     """Mock分析器，用规则和模板处理对话"""
@@ -236,92 +238,292 @@ class MockAnalyzer:
         import random
         return str(random.randint(100, 999))
 
-class LLMAnalyzer:
-    """基于LLM的分析器（未来实现）"""
+class OpenAIAnalyzer:
+    """OpenAI兼容API分析器 - 支持OpenAI、vLLM、Ollama、DeepSeek等"""
     
-    def __init__(self, llm_client):
-        self.llm = llm_client
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo", base_url: Optional[str] = None):
+        import os
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY") or os.getenv("CSE_API_KEY")
+        self.model = model or os.getenv("CSE_MODEL", "gpt-3.5-turbo")
+        self.base_url = base_url or os.getenv("OPENAI_BASE_URL") or os.getenv("CSE_BASE_URL")
         self.mock_analyzer = MockAnalyzer()  # 降级方案
+        
+        if self.api_key:
+            try:
+                from openai import OpenAI
+                import os
+                
+                # 清理代理设置
+                proxy_vars = ['http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'all_proxy']
+                for var in proxy_vars:
+                    if var in os.environ:
+                        del os.environ[var]
+                
+                # 支持自定义base_url用于OpenAI兼容的API提供商
+                client_kwargs = {"api_key": self.api_key, "http_client": None}
+                if self.base_url:
+                    client_kwargs["base_url"] = self.base_url
+                    print(f"Using OpenAI-compatible API at: {self.base_url}")
+                else:
+                    print("Using OpenAI official API")
+                    
+                self.client = OpenAI(**client_kwargs)
+                print(f"Model: {self.model}")
+                
+            except ImportError:
+                print("OpenAI package not installed, falling back to mock")
+                self.client = None
+            except Exception as e:
+                print(f"Failed to initialize OpenAI client: {e}")
+                self.client = None
+        else:
+            print("No API key provided (set OPENAI_API_KEY or CSE_API_KEY), using mock analyzer")
+            self.client = None
     
     async def analyze(self, message: str, state: Dict[str, Any]) -> IntentionSet:
-        """使用LLM分析消息"""
+        """使用OpenAI分析消息"""
         
-        # 构建prompt
-        prompt = self._build_prompt(message, state)
+        if not self.client:
+            print("📝 LLM Call: Using Mock Analyzer (no client available)")
+            return self.mock_analyzer.analyze(message, state)
+        
+        # 构建few-shot prompt
+        prompt = self._build_few_shot_prompt(message, state)
+        
+        # Log the LLM call
+        print(f"\n🤖 LLM Call Started")
+        print(f"   Model: {self.model}")
+        print(f"   Message: {message[:100]}{'...' if len(message) > 100 else ''}")
+        print(f"   State stories count: {len(state.get('stories', []))}")
+        print(f"   Prompt length: {len(prompt)} characters")
         
         try:
-            # 调用LLM
-            response = await self.llm.complete(prompt)
+            start_time = time.time()
+            
+            # 调用OpenAI API
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are an expert at analyzing user requirements and extracting structured intentions for state modification. Always respond with valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.1
+            )
+            
+            end_time = time.time()
+            latency = end_time - start_time
             
             # 解析响应
-            intentions = self._parse_llm_response(response)
+            content = response.choices[0].message.content
+            intentions = self._parse_llm_response(content)
+            
+            # Log the LLM response
+            print(f"✅ LLM Call Completed")
+            print(f"   Latency: {latency:.2f}s")
+            print(f"   Response ID: {response.id}")
+            print(f"   Model used: {response.model}")
+            print(f"   Usage: {response.usage}")
+            print(f"   Raw response length: {len(content)} characters")
+            print(f"   Parsed intentions: {len(intentions.items)} items")
+            print(f"   Response preview: {content[:200]}{'...' if len(content) > 200 else ''}")
+            
+            # Log detailed prompt and response for debugging
+            print(f"\n📋 Full Prompt:")
+            print(f"   {prompt}")
+            print(f"\n📋 Full Response:")
+            print(f"   {content}")
+            print(f"\n{'='*60}\n")
             
             return intentions
         except Exception as e:
             # 降级到Mock分析器
-            print(f"LLM analysis failed, falling back to mock: {e}")
+            print(f"❌ LLM Call Failed: {e}")
+            print(f"   Falling back to Mock Analyzer")
             return self.mock_analyzer.analyze(message, state)
     
-    def _build_prompt(self, message: str, state: Dict[str, Any]) -> str:
-        """构建LLM prompt"""
+    def _build_few_shot_prompt(self, message: str, state: Dict[str, Any]) -> str:
+        """构建包含few-shot示例的prompt"""
         return f"""
-You are analyzing a user message to extract structured intentions for state modification.
+I need to analyze user messages and extract structured intentions for state modification.
 
-Current State Schema:
+SCHEMA:
 - stories: array of user stories
-  - key: unique identifier
+  - key: unique identifier (format: PREFIX-DESCRIPTION)
   - title: story title
-  - priority: P0, P1, or P2
+  - priority: P0 (critical), P1 (high), P2 (medium)
   - acceptance_criteria: array of strings
   - dependencies: array of story keys
+  - auth_type: "password" | "sso" | "biometric" (for auth stories)
+  - platform: array of platforms if applicable
 
-Current State Summary:
-- {len(state.get('stories', []))} stories
-- Priorities: {self._count_priorities(state)}
+CURRENT STATE:
+- {len(state.get('stories', []))} existing stories
+- Priority distribution: {self._count_priorities(state) or 'Unknown'}
 
-User Message: {message}
+EXAMPLES:
 
-Extract the intentions as JSON:
+User: "Add a user login story with biometric authentication support"
+Response:
 {{
   "items": [
     {{
-      "action": "add|modify|delete",
-      "target_path": "RFC6901 JSON pointer",
-      "value": <new value if applicable>,
-      "reason": "why this change",
-      "confidence": 0.0-1.0
+      "action": "add",
+      "target_path": "/stories/-",
+      "value": {{
+        "key": "AUTH-Login",
+        "title": "User Login with Biometric Authentication",
+        "priority": "P1",
+        "acceptance_criteria": [
+          "User can log in with username/password",
+          "User can log in with biometric authentication",
+          "Failed login attempts are tracked"
+        ],
+        "auth_type": "biometric"
+      }},
+      "reason": "User requested login functionality with biometric support",
+      "confidence": 0.9
     }}
-  ],
-  "notes": "any clarification needed"
+  ]
 }}
 
-Response (JSON only):
+User: "Update AUTH-Login to be P0 priority and add SSO support"
+Response:
+{{
+  "items": [
+    {{
+      "action": "modify",
+      "target_path": "/stories/0/priority", 
+      "value": "P0",
+      "reason": "User requested priority upgrade to P0",
+      "confidence": 0.95
+    }},
+    {{
+      "action": "modify",
+      "target_path": "/stories/0/auth_type",
+      "value": "sso",
+      "reason": "User requested SSO authentication support",
+      "confidence": 0.9
+    }},
+    {{
+      "action": "modify",
+      "target_path": "/stories/0/acceptance_criteria/-",
+      "value": "User can log in via SSO provider",
+      "reason": "Adding SSO acceptance criteria",
+      "confidence": 0.85
+    }}
+  ]
+}}
+
+User: "Remove the user registration story"
+Response:
+{{
+  "items": [
+    {{
+      "action": "delete",
+      "target_path": "/stories/1",
+      "reason": "User requested removal of registration story",
+      "confidence": 0.9
+    }}
+  ]
+}}
+
+NOW ANALYZE:
+
+User Message: {message}
+
+Extract the intentions as JSON (JSON only, no explanation):
 """
     
     def _count_priorities(self, state: Dict[str, Any]) -> str:
         """统计优先级分布"""
-        stories = state.get("stories", [])
+        stories = state.get('stories', []) or []
         counts = {"P0": 0, "P1": 0, "P2": 0}
         for story in stories:
             p = story.get("priority", "P2")
+            if p not in counts:
+                p = "P2"  # Default to P2 if unknown priority
             counts[p] = counts.get(p, 0) + 1
-        return f"P0:{counts['P0']}, P1:{counts['P1']}, P2:{counts['P2']}"
+        
+        # Ensure all values are integers before formatting
+        p0_count = counts.get('P0', 0) or 0
+        p1_count = counts.get('P1', 0) or 0
+        p2_count = counts.get('P2', 0) or 0
+        
+        return f"P0:{p0_count}, P1:{p1_count}, P2:{p2_count}"
     
     def _parse_llm_response(self, response: str) -> IntentionSet:
         """解析LLM响应"""
-        import json
+        print(f"\n🔍 Parsing LLM Response...")
+        
+        # 清理响应
+        response = response.strip()
+        print(f"   Response length: {len(response)} chars")
         
         # 提取JSON部分
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         
+        print(f"   JSON start: {json_start}, JSON end: {json_end}")
+        
         if json_start >= 0 and json_end > json_start:
             json_str = response[json_start:json_end]
+            print(f"   Extracted JSON length: {len(json_str)} chars")
+            
             try:
                 data = json.loads(json_str)
-                return IntentionSet(**data)
-            except:
-                pass
+                print(f"   ✅ JSON parsed successfully")
+                print(f"   Data keys: {list(data.keys())}")
+                
+                # 验证数据格式
+                if "items" not in data:
+                    data["items"] = []
+                    print(f"   ⚠️  Added missing 'items' key")
+                
+                print(f"   Items count: {len(data['items'])}")
+                
+                # 转换action字符串为Action枚举
+                for i, item in enumerate(data["items"]):
+                    if "action" in item:
+                        action_str = item["action"].lower()
+                        original_action = item["action"]
+                        if action_str == "add":
+                            item["action"] = Action.add
+                        elif action_str == "modify" or action_str == "update":
+                            item["action"] = Action.modify
+                        elif action_str == "delete" or action_str == "remove":
+                            item["action"] = Action.delete
+                        print(f"   Item {i}: {original_action} → {item['action']}")
+                
+                intention_set = IntentionSet(**data)
+                print(f"   ✅ IntentionSet created successfully")
+                return intention_set
+                
+            except json.JSONDecodeError as e:
+                print(f"   ❌ JSON decode error: {e}")
+                print(f"   Raw response: {response}")
+                error_msg = str(e) if e else "Unknown JSON decode error"
+                return IntentionSet(items=[], notes=f"Failed to parse LLM response: {error_msg}")
+            except Exception as e:
+                print(f"   ❌ Data validation error: {e}")
+                print(f"   Parsed data: {data}")
+                error_msg = str(e) if e else "Unknown validation error"
+                return IntentionSet(items=[], notes=f"Data validation error: {error_msg}")
         
         # 解析失败，返回空集
-        return IntentionSet(items=[], notes="Failed to parse LLM response")
+        print(f"   ❌ No JSON found in response")
+        return IntentionSet(items=[], notes="No JSON found in LLM response")
+
+class LLMAnalyzer:
+    """LLM分析器工厂类"""
+    
+    @staticmethod
+    def create(provider: str = "openai", **kwargs) -> "OpenAIAnalyzer":
+        """创建LLM分析器实例"""
+        if provider.lower() == "openai":
+            return OpenAIAnalyzer(**kwargs)
+        elif provider.lower() == "mock":
+            return MockAnalyzer()
+        else:
+            print(f"Unknown provider {provider}, falling back to mock")
+            return MockAnalyzer()

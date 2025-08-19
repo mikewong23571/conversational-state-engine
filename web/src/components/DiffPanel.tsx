@@ -1,12 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { applyPatch } from 'fast-json-patch';
+import { applyPatch, Operation } from 'fast-json-patch';
 
-interface Patch {
-  op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test';
-  path: string;
-  value?: any;
-  from?: string;
-}
+type Patch = Operation;
 
 interface Conflict {
   type: string;
@@ -47,18 +42,47 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
   // 计算预览状态
   const previewState = useMemo(() => {
     try {
-      let nextState = JSON.parse(JSON.stringify(currentState));
+      // 确保currentState不为null/undefined，提供默认状态
+      const baseState = currentState || {
+        version: "v1",
+        schema_version: "1.0.0",
+        data: {
+          stories: [],
+          glossary: []
+        }
+      };
+      
+      let nextState = JSON.parse(JSON.stringify(baseState));
       
       proposedPatches.forEach((patch, idx) => {
         if (selected[idx]) {
-          nextState = applyPatch(nextState, [patch], false, false).newDocument;
+          try {
+            console.log('🔧 Applying patch:', patch);
+            console.log('🔧 Current state before patch:', JSON.stringify(nextState, null, 2));
+            
+            const result = applyPatch(nextState, [patch], false, false);
+            nextState = result.newDocument;
+            
+            console.log('✅ Patch applied successfully');
+            console.log('🔧 State after patch:', JSON.stringify(nextState, null, 2));
+          } catch (patchError) {
+            console.error('❌ Failed to apply individual patch:', patch);
+            console.error('❌ Patch error details:', patchError);
+            console.error('❌ State at failure:', JSON.stringify(nextState, null, 2));
+            // 继续处理其他补丁，不要中断整个流程
+          }
         }
       });
       
       return nextState;
     } catch (error) {
       console.error('Failed to apply patches:', error);
-      return currentState;
+      // 返回默认状态而不是可能为null的currentState
+      return currentState || {
+        version: "v1", 
+        schema_version: "1.0.0",
+        data: { stories: [], glossary: [] }
+      };
     }
   }, [currentState, proposedPatches, selected]);
 
@@ -209,7 +233,7 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
                               {patch.path}
                             </span>
                           </div>
-                          {patch.value && (
+                          {'value' in patch && patch.value !== undefined && (
                             <div className="mt-1 text-xs text-gray-500 truncate">
                               {typeof patch.value === 'object' 
                                 ? JSON.stringify(patch.value).substring(0, 50) + '...'

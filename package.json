@@ -1,0 +1,38 @@
+{
+  "name": "conversational-state-engine",
+  "version": "0.1.0",
+  "description": "LLM-driven state maintenance system with JSON Patch operations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm run dev:backend & pnpm run dev:frontend & wait",
+    "dev:backend": "uv run uvicorn server.app:app --reload --port 8000",
+    "dev:frontend": "cd web && pnpm dev",
+    "build": "pnpm run build:backend && pnpm run build:frontend",
+    "build:backend": "uv build",
+    "build:frontend": "cd web && pnpm build",
+    "test": "pnpm run test:backend && pnpm run test:frontend",
+    "test:backend": "uv run pytest tests/e2e/ -v",
+    "test:backend:quick": "uv run pytest tests/e2e/ -q",
+    "test:frontend": "cd web && pnpm test",
+    "lint": "pnpm run lint:backend && pnpm run lint:frontend",
+    "lint:backend": "uv run ruff check server/",
+    "lint:frontend": "cd web && pnpm lint",
+    "type-check": "pnpm run type-check:backend && pnpm run type-check:frontend",
+    "type-check:backend": "uv run mypy server/",
+    "type-check:frontend": "cd web && pnpm type-check",
+    "setup": "uv sync && pnpm install",
+    "clean": "cd web && pnpm clean && cd .. && rm -rf .uv-cache",
+    "start": "pnpm run dev",
+    "server": "pnpm run dev:backend",
+    "client": "pnpm run dev:frontend"
+  },
+  "devDependencies": {
+    "pnpm": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
