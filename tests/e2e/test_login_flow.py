@@ -2,9 +2,6 @@
 End-to-end test for login story flow - Fixed version
 """
 
-import json
-from typing import Any, Dict
-
 import pytest
 import requests
 
@@ -173,7 +170,7 @@ class TestLoginStoryFlow:
         # markdown_artifacts = [a for a in artifacts["items"] if a["type"] == "markdown"]
         # assert len(markdown_artifacts) > 0
 
-        print(f"测试通过！新版本: v2")
+        print("测试通过！新版本: v2")
 
     def test_conflict_detection(self, session_id, auth_token):
         """测试冲突检测功能"""
