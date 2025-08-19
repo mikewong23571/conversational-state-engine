@@ -14,7 +14,7 @@ interface EnhancedConflict {
   examples?: string[];
 }
 
-interface EnhancedImpactAnalysisData {
+export interface EnhancedImpactAnalysisData {
   affected_paths: string[];
   risk_level: 'low' | 'medium' | 'high';
   semantic_conflicts: EnhancedConflict[];

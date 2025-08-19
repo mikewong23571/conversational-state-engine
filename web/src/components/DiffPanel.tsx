@@ -279,11 +279,11 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-gray-700">{conflict.message}</p>
-                      {conflict.suggestion && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          建议: {JSON.stringify(conflict.suggestion)}
-                        </div>
-                      )}
+                        {conflict.suggestion ? (
+                          <div className="mt-2 text-xs text-gray-600">
+                            建议: {JSON.stringify(conflict.suggestion)}
+                          </div>
+                        ) : null}
                     </div>
                   ))}
                 </div>

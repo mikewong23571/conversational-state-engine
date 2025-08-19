@@ -114,9 +114,9 @@ function parseCommand(input: string): ParsedCommand | null {
       const params = match[2] || '';
 
       // 解析参数
-      const properties = parseKeyValuePairs(params);
-      const reason = properties.reason;
-      delete properties.reason; // reason不是属性
+        const properties = parseKeyValuePairs(params);
+        const reason = typeof properties.reason === 'string' ? properties.reason : undefined;
+        delete (properties as Record<string, unknown>).reason; // reason不是属性
 
       // 生成目标路径
       const targetPath = generateTargetPath(action, target, properties);

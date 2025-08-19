@@ -95,7 +95,7 @@ export function validatePatchPath(state: unknown, path: string): {
   try {
     const fullPath = path.startsWith('/data') ? path : `/data${path}`;
     const pathParts = fullPath.split('/').filter(part => part !== '');
-    let current = state;
+      let current: unknown = state;
 
     for (let i = 0; i < pathParts.length; i++) {
       const part = pathParts[i];
@@ -128,7 +128,7 @@ export function validatePatchPath(state: unknown, path: string): {
             suggestion: `使用有效的索引 (0-${current.length-1}) 或使用 '-' 添加到末尾`
           };
         }
-        current = current[index];
+          current = current[index];
       } else {
         // 对象属性
         if (current === null || typeof current !== 'object') {
@@ -148,7 +148,7 @@ export function validatePatchPath(state: unknown, path: string): {
           };
         }
 
-        current = current[part];
+          current = (current as Record<string, unknown>)[part];
       }
     }
 

@@ -1,13 +1,13 @@
 import React from 'react';
 import { IntentSummary } from '../hooks/useConfirmationFlow';
-import EnhancedImpactAnalysis from './EnhancedImpactAnalysis';
+import EnhancedImpactAnalysis, { type EnhancedImpactAnalysisData } from './EnhancedImpactAnalysis';
 
 interface IntentConfirmationProps {
   intent: IntentSummary;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  preliminaryImpact?: unknown; // 初步影响分析
+  preliminaryImpact?: EnhancedImpactAnalysisData; // 初步影响分析
 }
 
 export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({
@@ -100,23 +100,23 @@ export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({
       </div>
 
       {/* 提示信息 */}
-      {intent.confidence < 0.8 && (
-        <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-start">
-            <div className="text-yellow-600 text-sm">
-              ⚠️ 置信度较低，建议仔细核对意图理解是否正确。
+        {intent.confidence < 0.8 ? (
+          <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <div className="text-yellow-600 text-sm">
+                ⚠️ 置信度较低，建议仔细核对意图理解是否正确。
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
 
       {/* 初步影响分析 */}
-      {preliminaryImpact && (
-        <div className="mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">初步影响分析</h3>
-          <EnhancedImpactAnalysis impact={preliminaryImpact} />
-        </div>
-      )}
+        {preliminaryImpact ? (
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">初步影响分析</h3>
+            <EnhancedImpactAnalysis impact={preliminaryImpact} />
+          </div>
+        ) : null}
 
       {/* 操作按钮 */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
