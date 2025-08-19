@@ -117,8 +117,10 @@ function extractAttributesFromText(text: string): Record<string, any> {
   } else if (title.includes('代码') || title.includes('分析')) {
     keyBase = `CODE-${keyBase}`;
   }
-  
-  attributes.key = `AUTO-${keyBase}-${Date.now()}`;
+
+  // 确保生成的 key 符合 ^[A-Z]+-[A-Za-z0-9]+$ 格式
+  const keyPrefix = `AUTO${keyBase.replace(/[^A-Z]/g, '')}`;
+  attributes.key = `${keyPrefix}-${Date.now()}`;
   
   // 添加其他常用属性
   attributes.status = 'draft';
@@ -264,13 +266,21 @@ function generateSetPatch(intent: InferredIntent, originalText: string): Operati
   // 从目标路径中提取要设置的路径
   let targetPath = intent.target_path;
   let value = attributes.title;
-  
+
   // 如果路径不够具体，使用默认设置
   if (!targetPath.includes('.') && !targetPath.includes('[')) {
     targetPath = '/stories/0/title';
     value = attributes.title;
   }
-  
+
+  // 确保路径以 /data 开头以匹配状态结构
+  if (!targetPath.startsWith('/')) {
+    targetPath = `/${targetPath}`;
+  }
+  if (!targetPath.startsWith('/data/')) {
+    targetPath = `/data${targetPath}`;
+  }
+
   return {
     op: 'replace',
     path: targetPath,

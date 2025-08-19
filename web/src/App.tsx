@@ -598,8 +598,8 @@ const App: React.FC = () => {
 
   // 渐进式确认流程处理函数
   const handleIntentConfirmed = async () => {
-    if (!impact || !session) return;
-    
+    if (!session) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -613,19 +613,25 @@ const App: React.FC = () => {
       }
       
       confirmation.actions.confirmIntent();
-      
+
       // At this point, proposedPatches should have been populated by handleSubmit
       if (proposedPatches.length === 0) {
         console.error('⚠️ No patches available after intent confirmation');
         setError('No changes were generated from your intent. Please try rephrasing your request.');
         return;
       }
-      
-      // Set change preview for next stage
+
+      // Set change preview for next stage, falling back to a minimal impact analysis if none exists
+      const previewImpact = impact || {
+        affected_paths: [],
+        risk_level: 'low' as const,
+        semantic_conflicts: []
+      };
+
       confirmation.actions.setChangePreview({
         patches: proposedPatches,
         selectedIndices: proposedPatches.map((_, i) => i), // Select all by default
-        impact
+        impact: previewImpact
       });
     } catch (err: any) {
       console.error('Failed to confirm intent:', err);

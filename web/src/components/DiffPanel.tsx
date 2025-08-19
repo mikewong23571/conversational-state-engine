@@ -53,16 +53,21 @@ export const DiffPanel: React.FC<DiffPanelProps> = ({
       };
       
       let nextState = JSON.parse(JSON.stringify(baseState));
-      
+
       proposedPatches.forEach((patch, idx) => {
         if (selected[idx]) {
           try {
-            console.log('🔧 Applying patch:', patch);
+            // 如果patch路径缺少 /data 前缀，补上以匹配完整状态结构
+            const normalizedPatch = patch.path.startsWith('/data')
+              ? patch
+              : { ...patch, path: `/data${patch.path}` };
+
+            console.log('🔧 Applying patch:', normalizedPatch);
             console.log('🔧 Current state before patch:', JSON.stringify(nextState, null, 2));
-            
-            const result = applyPatch(nextState, [patch], false, false);
+
+            const result = applyPatch(nextState, [normalizedPatch], false, false);
             nextState = result.newDocument;
-            
+
             console.log('✅ Patch applied successfully');
             console.log('🔧 State after patch:', JSON.stringify(nextState, null, 2));
           } catch (patchError) {
