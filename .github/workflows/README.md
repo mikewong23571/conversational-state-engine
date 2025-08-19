@@ -39,7 +39,9 @@ graph TD
 - **Duration**: ~1 minute
 - **Purpose**: Linting, formatting, type checking
 - **Commands**:
-  - `pre-commit run --all-files` - Backend linting
+  - `ruff check .` - Python linting
+  - `mypy server/ domains/ shared/` - Backend type checking
+  - `pre-commit run --all-files` - Formatting and meta checks
   - `pnpm run lint` - Frontend linting
   - `pnpm run type-check` - TypeScript checking
 
