@@ -29,8 +29,11 @@ jobs:
         with:
           version: "latest"
 
+      - name: Set PyPI index to default
+        run: echo "PIP_INDEX_URL=https://pypi.org/simple" >> $GITHUB_ENV
+
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --dev
 
       - name: Run unit tests
         run: make test-unit
@@ -65,8 +68,11 @@ jobs:
         with:
           version: "latest"
 
+      - name: Set PyPI index to default
+        run: echo "PIP_INDEX_URL=https://pypi.org/simple" >> $GITHUB_ENV
+
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --dev
 
       - name: Run E2E tests
         run: make test-e2e
@@ -94,8 +100,11 @@ jobs:
         with:
           version: "latest"
 
+      - name: Set PyPI index to default
+        run: echo "PIP_INDEX_URL=https://pypi.org/simple" >> $GITHUB_ENV
+
       - name: Install Python dependencies
-        run: uv sync
+        run: uv sync --dev
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -149,9 +158,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
 
+      - name: Set PyPI index to default
+        run: echo "PIP_INDEX_URL=https://pypi.org/simple" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --dev
           pnpm install
 
       - name: Build backend
