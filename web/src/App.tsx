@@ -4,7 +4,7 @@ import IntentConfirmation from './components/IntentConfirmation';
 import SideEffectAnalysis from './components/SideEffectAnalysis';
 import CommandInput from './components/CommandInput';
 import { Operation } from 'fast-json-patch';
-import { useConfirmationFlow } from './hooks/useConfirmationFlow';
+import { useConfirmationFlow, type IntentSummary } from './hooks/useConfirmationFlow';
 import { parseUserInput } from './utils/commandParser';
 import { inferIntentFromText, validateInferredIntent, suggestCommand } from './utils/intentInference';
 import { generatePatchesFromIntent, validateGeneratedPatches } from './utils/patchGenerator';
@@ -24,6 +24,8 @@ interface Conflict {
   severity: 'low' | 'medium' | 'high';
   message: string;
   suggestion?: Suggestion;
+  affected_paths: string[];
+  examples?: string[];
 }
 
 interface ImpactAnalysis {
@@ -31,6 +33,18 @@ interface ImpactAnalysis {
   risk_level: 'low' | 'medium' | 'high';
   semantic_conflicts: Conflict[];
   suggested_alternatives?: unknown[];
+  risk_explanation?: string;
+  dependency_analysis?: {
+    breaking_changes: string[];
+    cascading_effects: string[];
+    validation_warnings: string[];
+  };
+}
+
+interface Artifact {
+  type?: string;
+  url?: string;
+  [key: string]: unknown;
 }
 
 interface SessionState {
@@ -61,7 +75,7 @@ interface API {
 
   commitState(sessionId: string): Promise<{
     success: boolean;
-    artifacts: unknown[];
+    artifacts: Artifact[];
   }>;
 }
 
@@ -233,7 +247,7 @@ class APIClient implements API {
 
   async commitState(sessionId: string, proposalId?: string): Promise<{
     success: boolean;
-    artifacts: unknown[];
+    artifacts: Artifact[];
   }> {
     if (!proposalId) {
       throw new Error('Proposal ID required for commit');
@@ -247,10 +261,10 @@ class APIClient implements API {
     if (!response.ok) throw new Error('Failed to commit state');
     const result = await response.json();
 
-    return {
-      success: true,
-      artifacts: result.artifacts?.items || []
-    };
+      return {
+        success: true,
+        artifacts: (result.artifacts?.items || []) as Artifact[],
+      };
   }
 }
 
@@ -284,7 +298,7 @@ const App: React.FC = () => {
   const confirmation = useConfirmationFlow();
 
   // Artifacts state
-  const [artifacts, setArtifacts] = useState<unknown[]>([]);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 
   // Debug logging for state changes
   useEffect(() => {
@@ -388,8 +402,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setShowAuth(true);
-    setSession(null);
-    setCurrentState(null);
+      setSession(null);
+      setCurrentState({});
     setProposedPatches([]);
     setImpact(null);
     setMessage('');
@@ -414,7 +428,7 @@ const App: React.FC = () => {
       // Parse user input to determine if it's a command or natural language
       const parseResult = parseUserInput(messageInput);
 
-      let intent: Record<string, unknown>;
+        let intent: IntentSummary;
       let patches: Operation[] = [];
       let impact: ImpactAnalysis = { affected_paths: [], risk_level: 'low', semantic_conflicts: [] };
 
@@ -541,16 +555,17 @@ const App: React.FC = () => {
 
         // Add validation warnings to impact if confidence is low
         if (!validation.valid || inferredIntent.confidence < 0.7) {
-          const validationConflicts = validation.issues.map(issue => ({
-            type: 'intent_inference',
-            rule: 'low_confidence_inference',
-            severity: 'medium' as const,
-            message: issue,
-            suggestion: {
-              description: `建议使用命令: ${suggestCommand(inferredIntent, messageInput)}`,
-              auto_fix: false
-            }
-          }));
+            const validationConflicts = validation.issues.map(issue => ({
+              type: 'intent_inference',
+              rule: 'low_confidence_inference',
+              severity: 'medium' as const,
+              message: issue,
+              affected_paths: impact.affected_paths || [],
+              suggestion: {
+                description: `建议使用命令: ${suggestCommand(inferredIntent, messageInput)}`,
+                auto_fix: false
+              }
+            }));
 
           impact = {
             ...impact,
@@ -583,11 +598,11 @@ const App: React.FC = () => {
           examples: conflict.rule === 'auth_method_conflict'
             ? ['SSO与本地密码认证同时启用', '用户可能无法正确登录']
             : ['数据验证失败', '业务逻辑冲突'],
-          suggestion: conflict.rule === 'auth_method_conflict' ? {
-            description: '建议禁用本地密码认证，统一使用SSO',
-            auto_fix: true,
-            patches: [{ op: 'replace', path: '/auth_settings/local_auth', value: false }]
-          } : undefined
+            suggestion: conflict.rule === 'auth_method_conflict' ? {
+              description: '建议禁用本地密码认证，统一使用SSO',
+              auto_fix: true,
+              patches: [{ op: 'replace', path: '/auth_settings/local_auth', value: false } as Operation]
+            } : undefined
         })) || []
       };
 
@@ -996,7 +1011,7 @@ const App: React.FC = () => {
                 onConfirm={handleIntentConfirmed}
                 onCancel={handleConfirmationCancel}
                 loading={loading}
-                preliminaryImpact={impact}
+                  preliminaryImpact={impact ?? undefined}
               />
             ) : confirmation.state.stage === 'change' && confirmation.state.changes && currentState ? (
               <DiffPanel
