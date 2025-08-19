@@ -37,17 +37,17 @@ const COMMAND_PATTERNS = {
  */
 function parseKeyValuePairs(input: string): Record<string, any> {
   const result: Record<string, any> = {};
-  
+
   // 正则匹配 key=value, key="value", key=[array]
   const kvRegex = /(\w+)=(?:"([^"]*)"|(\[[^\]]*\])|([^\s]+))/g;
   let match;
-  
+
   while ((match = kvRegex.exec(input)) !== null) {
     const key = match[1];
     const quotedValue = match[2];
     const arrayValue = match[3];
     const simpleValue = match[4];
-    
+
     if (quotedValue !== undefined) {
       result[key] = quotedValue;
     } else if (arrayValue !== undefined) {
@@ -67,7 +67,7 @@ function parseKeyValuePairs(input: string): Record<string, any> {
       }
     }
   }
-  
+
   return result;
 }
 
@@ -81,20 +81,20 @@ function generateTargetPath(action: string, target: string, properties: Record<s
         return '/stories/-'; // 添加到数组末尾
       }
       return `/${target}/-`;
-    
+
     case 'edit':
     case 'delete':
       if (target === 'story' && properties.key) {
         return `/stories/[key=${properties.key}]`; // 通过key查找
       }
       return `/${target}/0`; // 默认第一个
-    
+
     case 'set':
       return target; // set命令中target就是完整路径
-    
+
     case 'move':
       return `/${target}/0`; // 默认实现
-    
+
     default:
       return `/${target}`;
   }
@@ -105,22 +105,22 @@ function generateTargetPath(action: string, target: string, properties: Record<s
  */
 function parseCommand(input: string): ParsedCommand | null {
   const trimmed = input.trim();
-  
+
   // 检查每种命令模式
   for (const [action, pattern] of Object.entries(COMMAND_PATTERNS)) {
     const match = trimmed.match(pattern);
     if (match) {
       const target = match[1];
       const params = match[2] || '';
-      
+
       // 解析参数
       const properties = parseKeyValuePairs(params);
       const reason = properties.reason;
       delete properties.reason; // reason不是属性
-      
+
       // 生成目标路径
       const targetPath = generateTargetPath(action, target, properties);
-      
+
       return {
         action: action === 'del' || action === 'delete' ? 'delete' : action as any,
         target: targetPath,
@@ -130,7 +130,7 @@ function parseCommand(input: string): ParsedCommand | null {
       };
     }
   }
-  
+
   return null;
 }
 
@@ -139,7 +139,7 @@ function parseCommand(input: string): ParsedCommand | null {
  */
 export function parseUserInput(input: string): CommandResult {
   const trimmed = input.trim();
-  
+
   // 检查是否是命令
   if (trimmed.startsWith('/')) {
     const command = parseCommand(trimmed);
@@ -151,7 +151,7 @@ export function parseUserInput(input: string): CommandResult {
       };
     }
   }
-  
+
   // 不是命令或解析失败，返回自然语言
   return {
     type: 'natural_language',
@@ -195,24 +195,24 @@ export function getCommandHelp(): string {
  */
 export function validateCommand(command: ParsedCommand): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   if (!command.action) {
     errors.push('Missing action');
   }
-  
+
   if (!command.target) {
     errors.push('Missing target');
   }
-  
+
   // 特定验证
   if (command.action === 'add' && Object.keys(command.properties).length === 0) {
     errors.push('Add command requires at least one property');
   }
-  
+
   if (command.action === 'edit' && Object.keys(command.properties).length === 0) {
     errors.push('Edit command requires at least one property to change');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors

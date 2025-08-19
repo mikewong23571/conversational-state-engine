@@ -16,7 +16,7 @@ export interface GeneratedPatchResult {
  */
 function extractAttributesFromText(text: string): Record<string, any> {
   const attributes: Record<string, any> = {};
-  
+
   // 提取优先级
   const priorityMatch = text.match(/P[0-3]|[Pp]riority\s*[=:]\s*P?[0-3]|高优先级|中优先级|低优先级/i);
   if (priorityMatch) {
@@ -33,10 +33,10 @@ function extractAttributesFromText(text: string): Record<string, any> {
   } else {
     attributes.priority = 'P1'; // 默认中等优先级
   }
-  
+
   // 提取标题（尝试从文本中猜测）
   let title = '';
-  
+
   // 匹配 "创建一个xxx" 模式，但更智能地提取核心概念
   const createMatch = text.match(/创建\s*(?:一个|个)?\s*([^，。！？]+?)(?:，|。|$)/);
   if (createMatch) {
@@ -56,7 +56,7 @@ function extractAttributesFromText(text: string): Record<string, any> {
       title = rawTitle.length > 20 ? rawTitle.substring(0, 20) : rawTitle;
     }
   }
-  
+
   // 匹配其他可能的标题模式
   if (!title) {
     const titlePatterns = [
@@ -65,7 +65,7 @@ function extractAttributesFromText(text: string): Record<string, any> {
       /([^，。！？\s]*系统[^，。！？\s]*)/,
       /([^，。！？\s]*功能[^，。！？\s]*)/
     ];
-    
+
     for (const pattern of titlePatterns) {
       const match = text.match(pattern);
       if (match) {
@@ -74,30 +74,30 @@ function extractAttributesFromText(text: string): Record<string, any> {
       }
     }
   }
-  
+
   // 如果还是没有找到，使用默认标题
   if (!title) {
     title = '用户需求项目';
   }
-  
+
   attributes.title = title;
-  
+
   // 提取平台信息
   const platformKeywords = ['iOS', 'Android', 'Web', '网页', '移动端', '桌面', 'Windows', 'Mac', 'Linux'];
-  const foundPlatforms = platformKeywords.filter(platform => 
+  const foundPlatforms = platformKeywords.filter(platform =>
     text.toLowerCase().includes(platform.toLowerCase())
   );
   if (foundPlatforms.length > 0) {
     attributes.platform = foundPlatforms;
   }
-  
+
   // 提取认证类型
   if (text.includes('SSO') || text.includes('单点登录')) {
     attributes.auth_type = 'SSO';
   } else if (text.includes('本地') || text.includes('密码')) {
     attributes.auth_type = 'local';
   }
-  
+
   // 生成唯一key - 更规范的格式
   let keyBase = '';
   if (title.includes('工具')) {
@@ -110,7 +110,7 @@ function extractAttributesFromText(text: string): Record<string, any> {
     // 提取英文/数字，转为大写，限制长度
     keyBase = title.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 8) || 'ITEM';
   }
-  
+
   // 添加类型前缀
   if (title.includes('命令行') || title.includes('CLI')) {
     keyBase = `CLI-${keyBase}`;
@@ -121,10 +121,10 @@ function extractAttributesFromText(text: string): Record<string, any> {
   // 确保生成的 key 符合 ^[A-Z]+-[A-Za-z0-9]+$ 格式
   const keyPrefix = `AUTO${keyBase.replace(/[^A-Z]/g, '')}`;
   attributes.key = `${keyPrefix}-${Date.now()}`;
-  
+
   // 添加其他常用属性
   attributes.status = 'draft';
-  
+
   // 生成更具体的验收标准
   const acceptanceCriteria = [];
   if (title.includes('工具')) {
@@ -143,13 +143,13 @@ function extractAttributesFromText(text: string): Record<string, any> {
   } else {
     acceptanceCriteria.push(`实现${title}的核心功能`);
   }
-  
+
   // 总是添加通用标准
   acceptanceCriteria.push('通过功能测试');
   acceptanceCriteria.push('通过用户验收');
-  
+
   attributes.acceptance_criteria = acceptanceCriteria;
-  
+
   return attributes;
 }
 
@@ -158,7 +158,7 @@ function extractAttributesFromText(text: string): Record<string, any> {
  */
 function generateAddPatch(intent: InferredIntent, originalText: string): Operation {
   const attributes = extractAttributesFromText(originalText);
-  
+
   // 根据目标路径确定添加的内容类型
   if (intent.target_path.includes('/stories')) {
     return {
@@ -199,17 +199,17 @@ function generateAddPatch(intent: InferredIntent, originalText: string): Operati
  */
 function generateModifyPatch(intent: InferredIntent, originalText: string): Operation[] {
   const attributes = extractAttributesFromText(originalText);
-  
+
   // 根据意图的target_path确定基础路径
-  const basePath = intent.target_path.endsWith('/-') 
-    ? intent.target_path.replace('/-', '/0') 
-    : intent.target_path.includes('/stories') 
-    ? '/data/stories/0' 
+  const basePath = intent.target_path.endsWith('/-')
+    ? intent.target_path.replace('/-', '/0')
+    : intent.target_path.includes('/stories')
+    ? '/data/stories/0'
     : '/data/stories/0';
-  
+
   // 生成多个可能的修改补丁
   const patches: Operation[] = [];
-  
+
   if (attributes.priority) {
     patches.push({
       op: 'replace',
@@ -217,7 +217,7 @@ function generateModifyPatch(intent: InferredIntent, originalText: string): Oper
       value: attributes.priority
     });
   }
-  
+
   if (attributes.title) {
     patches.push({
       op: 'replace',
@@ -225,7 +225,7 @@ function generateModifyPatch(intent: InferredIntent, originalText: string): Oper
       value: attributes.title
     });
   }
-  
+
   if (attributes.auth_type) {
     patches.push({
       op: 'replace',
@@ -233,7 +233,7 @@ function generateModifyPatch(intent: InferredIntent, originalText: string): Oper
       value: attributes.auth_type
     });
   }
-  
+
   // 如果没有具体的修改，至少更新原因
   if (patches.length === 0) {
     patches.push({
@@ -242,7 +242,7 @@ function generateModifyPatch(intent: InferredIntent, originalText: string): Oper
       value: `更新需求: ${originalText}`
     });
   }
-  
+
   return patches;
 }
 
@@ -262,7 +262,7 @@ function generateDeletePatch(_intent: InferredIntent): Operation {
  */
 function generateSetPatch(intent: InferredIntent, originalText: string): Operation {
   const attributes = extractAttributesFromText(originalText);
-  
+
   // 从目标路径中提取要设置的路径
   let targetPath = intent.target_path;
   let value = attributes.title;
@@ -292,42 +292,42 @@ function generateSetPatch(intent: InferredIntent, originalText: string): Operati
  * 主要的补丁生成函数
  */
 export function generatePatchesFromIntent(
-  intent: InferredIntent, 
+  intent: InferredIntent,
   originalText: string
 ): GeneratedPatchResult {
   let patches: Operation[] = [];
   let explanation = '';
   let confidence = intent.confidence;
-  
+
   try {
     switch (intent.action) {
       case 'add':
         patches = [generateAddPatch(intent, originalText)];
         explanation = `基于意图"${intent.action}"生成添加操作，将在${intent.target_path}创建新项目`;
         break;
-        
+
       case 'modify':
         patches = generateModifyPatch(intent, originalText);
         explanation = `基于意图"${intent.action}"生成${patches.length}个修改操作`;
         break;
-        
+
       case 'delete':
         patches = [generateDeletePatch(intent)];
         explanation = `基于意图"${intent.action}"生成删除操作，将移除${intent.target_path}的项目`;
         break;
-        
+
       case 'set':
         patches = [generateSetPatch(intent, originalText)];
         explanation = `基于意图"${intent.action}"生成设置操作，将更新${intent.target_path}`;
         break;
-        
+
       default:
         // 默认为添加操作
         patches = [generateAddPatch(intent, originalText)];
         explanation = `未识别的操作类型，默认生成添加操作`;
         confidence = Math.min(confidence, 0.5);
     }
-    
+
   } catch (error) {
     console.error('生成补丁时出错:', error);
     // 生成一个安全的默认补丁
@@ -345,7 +345,7 @@ export function generatePatchesFromIntent(
     explanation = '补丁生成失败，创建了一个默认的审查项目';
     confidence = 0.3;
   }
-  
+
   return {
     patches,
     explanation,
@@ -361,24 +361,24 @@ export function validateGeneratedPatches(patches: Operation[]): {
   issues: string[];
 } {
   const issues: string[] = [];
-  
+
   for (const patch of patches) {
     // 检查路径有效性
     if (!patch.path || !patch.path.startsWith('/')) {
       issues.push(`无效的补丁路径: ${patch.path}`);
     }
-    
+
     // 检查操作类型
     if (!['add', 'remove', 'replace', 'move', 'copy', 'test'].includes(patch.op)) {
       issues.push(`无效的操作类型: ${patch.op}`);
     }
-    
+
     // 检查添加和替换操作必须有值
     if ((patch.op === 'add' || patch.op === 'replace') && patch.value === undefined) {
       issues.push(`${patch.op}操作缺少值`);
     }
   }
-  
+
   return {
     valid: issues.length === 0,
     issues

@@ -43,7 +43,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
       e.preventDefault();
       handleSubmit(e);
     }
-    
+
     // 显示/隐藏帮助
     if (e.key === 'F1' || (e.ctrlKey && e.key === '/')) {
       e.preventDefault();
@@ -58,7 +58,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const getInputStyle = () => {
     if (!parseResult) return '';
-    
+
     if (parseResult.type === 'command') {
       return 'border-blue-300 bg-blue-50';
     } else {
@@ -154,7 +154,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-500">
-            {parseResult?.type === 'command' 
+            {parseResult?.type === 'command'
               ? `Structured command (confidence: ${parseResult.command?.confidence || 1})`
               : 'Natural language input'
             }
@@ -176,7 +176,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
           <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono">
             {getCommandHelp()}
           </pre>
-          
+
           <div className="mt-3 text-xs text-gray-600">
             <p><strong>Tips:</strong></p>
             <ul className="ml-4 mt-1 space-y-1">

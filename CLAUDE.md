@@ -67,7 +67,7 @@ pnpm run test
 # Lint everything
 pnpm run lint
 
-# Type check everything  
+# Type check everything
 pnpm run type-check
 
 # Clean build artifacts
@@ -165,7 +165,7 @@ http://localhost:8000/docs
 ```json
 {
   "version": "v1",
-  "schema_version": "1.0.0", 
+  "schema_version": "1.0.0",
   "data": {
     "stories": [...],
     "glossary": [...]
@@ -221,7 +221,7 @@ Currently open for development (`*`). Restrict `allow_origins` for production.
 
 ### Documentation Hierarchy
 1. **`design.md`** - Authoritative architectural specifications (MUST follow)
-2. **`instructions.md`** - Complete project maintenance and development procedures  
+2. **`instructions.md`** - Complete project maintenance and development procedures
 3. **`toolchain.md`** - Comprehensive command reference and tool documentation
 4. **`CLAUDE.md`** - Claude Code guidance (this file)
 
@@ -294,7 +294,7 @@ The `design.md` file contains detailed specifications for:
 
 ### Troubleshooting
 - **Common Issues**: See `instructions.md` > "Troubleshooting" section
-- **Tool Problems**: See `toolchain.md` > "Troubleshooting" section  
+- **Tool Problems**: See `toolchain.md` > "Troubleshooting" section
 - **Architecture Issues**: Consult `design.md` for specifications
 
 ### Maintenance

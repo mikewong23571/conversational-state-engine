@@ -1,10 +1,10 @@
 # TASK-005: Analyze API Contract Compliance
 
-**Task ID:** TASK-005  
-**Assignee:** [To be assigned]  
-**Estimated Effort:** 3-4 days  
-**Skill Level Required:** Mid-level Engineer  
-**Priority:** High  
+**Task ID:** TASK-005
+**Assignee:** [To be assigned]
+**Estimated Effort:** 3-4 days
+**Skill Level Required:** Mid-level Engineer
+**Priority:** High
 
 ## Task Overview
 
@@ -205,6 +205,6 @@ Check each endpoint's error responses against design.md section 6.1 format:
 
 ---
 
-**Task Assignment Date:** [To be filled]  
-**Target Completion Date:** [To be filled]  
+**Task Assignment Date:** [To be filled]
+**Target Completion Date:** [To be filled]
 **Assigned Engineer:** [To be filled]

@@ -115,10 +115,10 @@ export const EnhancedImpactAnalysis: React.FC<EnhancedImpactAnalysisProps> = ({
           <h3 className="text-lg font-medium text-gray-900">
             检测到的冲突 ({impact.semantic_conflicts.length})
           </h3>
-          
+
           {impact.semantic_conflicts.map((conflict, index) => (
             <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-              <div 
+              <div
                 className="p-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
                 onClick={() => setExpandedConflict(expandedConflict === index ? null : index)}
               >

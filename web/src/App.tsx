@@ -36,23 +36,23 @@ interface SessionState {
 
 interface API {
   baseUrl: string;
-  
+
   createSession(): Promise<SessionState>;
-  
+
   getSessionState(sessionId: string): Promise<any>;
-  
+
   submitIntent(sessionId: string, message: string): Promise<{
     intentions: any[];
     patches: Patch[];
     impact: ImpactAnalysis;
   }>;
-  
+
   confirmPatches(sessionId: string, patchIndices: number[]): Promise<{
     success: boolean;
     new_state: any;
     applied_patches: Patch[];
   }>;
-  
+
   commitState(sessionId: string): Promise<{
     success: boolean;
     artifacts: any[];
@@ -112,18 +112,18 @@ class APIClient implements API {
       headers: this.getAuthHeaders()
     });
     if (!createResponse.ok) throw new Error('Failed to create session');
-    
+
     const sessionData = await createResponse.json();
     const sessionId = sessionData.session_id;
-    
+
     // Get session state
     const stateResponse = await fetch(`${this.baseUrl}/sessions/${sessionId}/state`, {
       headers: this.getAuthHeaders()
     });
     if (!stateResponse.ok) throw new Error('Failed to get session state');
-    
+
     const stateData = await stateResponse.json();
-    
+
     return {
       id: sessionId,
       state: stateData,
@@ -203,9 +203,9 @@ class APIClient implements API {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/confirm-changes`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         proposal_id: proposalId,
-        selected_patch_indices: selectedIndices 
+        selected_patch_indices: selectedIndices
       })
     });
     if (!response.ok) throw new Error('Failed to confirm changes');
@@ -216,7 +216,7 @@ class APIClient implements API {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/confirm-side-effects`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         proposal_id: proposalId,
         apply_auto_fixes: applyAutoFixes
       })
@@ -232,7 +232,7 @@ class APIClient implements API {
     if (!proposalId) {
       throw new Error('Proposal ID required for commit');
     }
-    
+
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/commit`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -240,7 +240,7 @@ class APIClient implements API {
     });
     if (!response.ok) throw new Error('Failed to commit state');
     const result = await response.json();
-    
+
     return {
       success: true,
       artifacts: result.artifacts?.items || []
@@ -253,7 +253,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<SessionState | null>(null);
   const [currentState, setCurrentState] = useState<any>({
     version: "v1",
-    schema_version: "1.0.0", 
+    schema_version: "1.0.0",
     data: {
       stories: [],
       glossary: []
@@ -276,7 +276,7 @@ const App: React.FC = () => {
 
   // 渐进式确认流程
   const confirmation = useConfirmationFlow();
-  
+
   // Artifacts state
   const [artifacts, setArtifacts] = useState<any[]>([]);
 
@@ -298,7 +298,7 @@ const App: React.FC = () => {
     const initializeSession = async () => {
       console.log('initializeSession called from useEffect, isLoggedIn:', isLoggedIn);
       if (!isLoggedIn) return;
-      
+
       try {
         setLoading(true);
         setError(null);
@@ -388,10 +388,10 @@ const App: React.FC = () => {
     setAuthMode('login');
   };
 
-  
+
   const handleSubmit = async (messageInput: string) => {
     if (!messageInput.trim()) return;
-    
+
     if (!session) {
       console.error('No session found when trying to submit intent');
       setError('No active session. Please refresh the page.');
@@ -404,7 +404,7 @@ const App: React.FC = () => {
 
       // Parse user input to determine if it's a command or natural language
       const parseResult = parseUserInput(messageInput);
-      
+
       let intent: any;
       let patches: Operation[] = [];
       let impact: any = { affected_paths: [], risk_level: 'low', semantic_conflicts: [] };
@@ -428,12 +428,12 @@ const App: React.FC = () => {
         // Handle natural language with intelligent intent inference
         const inferredIntent = inferIntentFromText(messageInput);
         const validation = validateInferredIntent(inferredIntent, messageInput);
-        
+
         try {
           // Generate local patches first to get the value
           const patchResult = generatePatchesFromIntent(inferredIntent, messageInput);
-          const patchValue = patchResult.patches.length > 0 && 'value' in patchResult.patches[0] 
-            ? patchResult.patches[0].value 
+          const patchValue = patchResult.patches.length > 0 && 'value' in patchResult.patches[0]
+            ? patchResult.patches[0].value
             : null;
 
           // Create intention set from inferred intent
@@ -446,36 +446,36 @@ const App: React.FC = () => {
               confidence: Math.max(0.1, Math.min(1.0, inferredIntent.confidence)) // Ensure valid range
             }]
           };
-          
+
           // Create intention set in backend
           console.log('🔧 Creating intention set:', intentionSet);
           const intentionResponse = await api.createIntentionSet(session.id, intentionSet);
           const intentionSetId = intentionResponse.intention_set_id;
           console.log('✅ Created intention set:', intentionSetId);
-          
+
           // Create patch proposal
           console.log('🔧 Creating patch proposal for intention set:', intentionSetId);
           const proposalResponse = await api.createPatchProposal(session.id, intentionSetId);
-          
+
           patches = proposalResponse.patches;
           impact = proposalResponse.impact_analysis;
           setCurrentProposalId(proposalResponse.proposal_id);
-          
+
           console.log('✅ Created patch proposal:', proposalResponse.proposal_id);
           console.log('✅ Backend patches:', patches);
           console.log('✅ Backend impact:', impact);
-          
+
         } catch (apiError) {
           console.warn('API backend flow failed, using local patch generation:', apiError);
-          
+
           // Fallback to local patch generation
           const patchResult = generatePatchesFromIntent(inferredIntent, messageInput);
           const patchValidation = validateGeneratedPatches(patchResult.patches);
-          
+
           if (patchValidation.valid) {
             patches = patchResult.patches;
             console.log('✅ Generated patches locally:', patches);
-            
+
             // Test patches on current state
             const patchTest = testPatches(currentState, patches);
             if (!patchTest.success) {
@@ -487,7 +487,7 @@ const App: React.FC = () => {
                   console.error('💡 Suggestions:', suggestions);
                 }
               });
-              
+
               // Use simplified fallback patch
               patches = [{
                 op: 'add',
@@ -517,11 +517,11 @@ const App: React.FC = () => {
               }
             }];
           }
-          
+
           // No proposal ID for local patches - will skip backend confirmation
           setCurrentProposalId(null);
         }
-        
+
         intent = {
           action: inferredIntent.action,
           target_path: inferredIntent.target_path,
@@ -542,7 +542,7 @@ const App: React.FC = () => {
               auto_fix: false
             }
           }));
-          
+
           impact = {
             ...impact,
             semantic_conflicts: [
@@ -554,11 +554,11 @@ const App: React.FC = () => {
       }
 
       confirmation.actions.startIntentConfirmation(intent);
-      
+
       // Enhance impact analysis with additional details
       const enhancedImpact = {
         ...impact,
-        risk_explanation: impact.risk_level === 'high' 
+        risk_explanation: impact.risk_level === 'high'
           ? '检测到高风险操作，可能影响现有功能或数据一致性'
           : impact.risk_level === 'medium'
           ? '中等风险操作，建议仔细评估后执行'
@@ -571,7 +571,7 @@ const App: React.FC = () => {
         semantic_conflicts: impact.semantic_conflicts?.map((conflict: any) => ({
           ...conflict,
           affected_paths: impact.affected_paths || ['/stories'],
-          examples: conflict.rule === 'auth_method_conflict' 
+          examples: conflict.rule === 'auth_method_conflict'
             ? ['SSO与本地密码认证同时启用', '用户可能无法正确登录']
             : ['数据验证失败', '业务逻辑冲突'],
           suggestion: conflict.rule === 'auth_method_conflict' ? {
@@ -585,7 +585,7 @@ const App: React.FC = () => {
       // Store patches and enhanced impact for later stages
       console.log('🔍 Debug - handleSubmit patches:', patches);
       console.log('🔍 Debug - handleSubmit enhancedImpact:', enhancedImpact);
-      
+
       setProposedPatches(patches);
       setImpact(enhancedImpact);
     } catch (err: any) {
@@ -603,7 +603,7 @@ const App: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Call backend intent confirmation only if we have a proposal ID
       if (currentProposalId) {
         await api.confirmIntent(session.id, currentProposalId);
@@ -611,7 +611,7 @@ const App: React.FC = () => {
       } else {
         console.log('📝 Using local patch flow, skipping backend intent confirmation');
       }
-      
+
       confirmation.actions.confirmIntent();
 
       // At this point, proposedPatches should have been populated by handleSubmit
@@ -643,11 +643,11 @@ const App: React.FC = () => {
 
   const handleChangesConfirmed = async () => {
     if (!session || !confirmation.state.changes) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // Call backend changes confirmation only if we have a proposal ID
       if (currentProposalId) {
         await api.confirmChanges(session.id, currentProposalId, confirmation.state.changes.selectedIndices);
@@ -655,9 +655,9 @@ const App: React.FC = () => {
       } else {
         console.log('📝 Using local patch flow, skipping backend changes confirmation');
       }
-      
+
       confirmation.actions.confirmChanges();
-      
+
       // Side effect analysis - in real implementation this would come from API
       const sideEffects = {
         warnings: impact?.semantic_conflicts?.map(conflict => ({
@@ -667,7 +667,7 @@ const App: React.FC = () => {
         })) || [],
         auto_fixes: [] // TODO: implement auto-fix suggestions
       };
-      
+
       confirmation.actions.setSideEffectAnalysis(sideEffects);
     } catch (err: any) {
       console.error('Failed to confirm changes:', err);
@@ -679,7 +679,7 @@ const App: React.FC = () => {
 
   const handleSideEffectsConfirmed = async () => {
     if (!session) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -691,15 +691,15 @@ const App: React.FC = () => {
       } else {
         console.log('📝 Using local patch flow, skipping backend side effects confirmation');
       }
-      
+
       confirmation.actions.confirmSideEffects();
-      
+
       // Note: Don't reset form immediately - let user see the success state
       // and decide when to commit or make more changes
       setProposedPatches([]);
       setImpact(null);
       setMessage('');
-      
+
       // Show a message that changes are ready to commit
       console.log('Side effects confirmed. Ready to commit changes.');
     } catch (err: any) {
@@ -732,22 +732,22 @@ const App: React.FC = () => {
       if (currentProposalId) {
         // Backend proposal flow
         const response = await api.commitState(session.id, currentProposalId);
-        
+
         if (response.success) {
           console.log('✅ Backend commit successful. Artifacts generated:', response.artifacts);
-          
+
           // Reset confirmation flow and proposal
           confirmation.actions.cancel();
           setCurrentProposalId(null);
-          
+
           // Refresh session state
           const newStateResponse = await api.getSessionState(session.id);
           console.log('🔧 Backend state refresh response:', newStateResponse);
           setCurrentState(newStateResponse);
-          
+
           // Store artifacts for display
           setArtifacts(response.artifacts);
-          
+
           // Show success message
           alert(`Commit successful! Generated ${response.artifacts.length} artifacts.`);
         } else {
@@ -756,21 +756,21 @@ const App: React.FC = () => {
       } else {
         // Local patch flow - apply patches locally and update state
         console.log('📝 Local commit: applying patches locally');
-        
+
         // Get the patches from the confirmation state
         const patches = confirmation.state.changes?.patches || [];
         const selectedIndices = confirmation.state.changes?.selectedIndices || [];
         const selectedPatches = selectedIndices.map(i => patches[i]).filter(Boolean);
-        
+
         if (selectedPatches.length > 0) {
           try {
             // Apply patches to current state using fast-json-patch
             const { applyPatch } = await import('fast-json-patch');
             const updatedState = applyPatch(currentState, selectedPatches, false, false).newDocument;
-            
+
             // Update the current state in the UI
             setCurrentState(updatedState);
-            
+
             console.log('✅ Local patches applied successfully');
             console.log('🔧 Updated state:', updatedState);
           } catch (patchError) {
@@ -779,12 +779,12 @@ const App: React.FC = () => {
             return;
           }
         }
-        
+
         confirmation.actions.cancel();
-        
-        // Store empty artifacts for display  
+
+        // Store empty artifacts for display
         setArtifacts([]);
-        
+
         // Show success message
         alert('Local changes applied successfully! (Demo mode - changes not persisted to backend)');
       }
@@ -803,7 +803,7 @@ const App: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             {authMode === 'login' ? 'Login' : 'Register'}
           </h2>
-          
+
           <form onSubmit={authMode === 'login' ? handleLogin : handleRegister} className="space-y-4">
             {authMode === 'register' && (
               <div>
@@ -818,7 +818,7 @@ const App: React.FC = () => {
                 />
               </div>
             )}
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
@@ -830,7 +830,7 @@ const App: React.FC = () => {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
@@ -843,32 +843,32 @@ const App: React.FC = () => {
                 minLength={6}
               />
             </div>
-            
+
             <button
               type="submit"
               disabled={loading}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
             >
-              {loading 
-                ? (authMode === 'login' ? 'Logging in...' : 'Registering...') 
+              {loading
+                ? (authMode === 'login' ? 'Logging in...' : 'Registering...')
                 : (authMode === 'login' ? 'Login' : 'Register')
               }
             </button>
           </form>
-          
+
           <div className="mt-4 text-center">
             <button
               type="button"
               onClick={switchAuthMode}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              {authMode === 'login' 
-                ? "Don't have an account? Register" 
+              {authMode === 'login'
+                ? "Don't have an account? Register"
                 : "Already have an account? Login"
               }
             </button>
           </div>
-          
+
           {error && (
             <div className="mt-4 text-red-600 text-sm">
               {error}
@@ -930,8 +930,8 @@ const App: React.FC = () => {
                   onClick={handleCommit}
                   disabled={loading || confirmation.state.stage !== 'completed'}
                   className={`px-4 py-2 rounded-md disabled:bg-gray-400 ${
-                    confirmation.state.stage === 'completed' 
-                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                    confirmation.state.stage === 'completed'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-gray-300 text-gray-500'
                   }`}
                   title={confirmation.state.stage !== 'completed' ? 'Complete the confirmation flow first' : 'Commit changes permanently'}
@@ -1010,7 +1010,7 @@ const App: React.FC = () => {
                   <div className="text-lg mb-2">✅ 变更已成功应用</div>
                   <div className="text-sm">您的变更已提交并生效，可以点击"Commit State"进行最终提交</div>
                 </div>
-                
+
                 {artifacts.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">生成的产物</h3>
@@ -1035,7 +1035,7 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => confirmation.actions.cancel()}

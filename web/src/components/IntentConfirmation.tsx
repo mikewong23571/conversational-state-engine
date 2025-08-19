@@ -65,7 +65,7 @@ export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({
             <span className="text-sm font-medium text-gray-500 w-20 mt-1">值:</span>
             <div className="flex-1">
               <pre className="text-sm text-gray-700 bg-gray-50 p-3 rounded max-h-32 overflow-y-auto">
-                {typeof intent.value === 'object' 
+                {typeof intent.value === 'object'
                   ? JSON.stringify(intent.value, null, 2)
                   : String(intent.value)}
               </pre>
@@ -88,7 +88,7 @@ export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({
             {Math.round(intent.confidence * 100)}%
           </span>
           <div className="flex-1 bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className={`h-2 rounded-full transition-all duration-300 ${
                 intent.confidence >= 0.8 ? 'bg-green-500' :
                 intent.confidence >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
@@ -127,7 +127,7 @@ export const IntentConfirmation: React.FC<IntentConfirmationProps> = ({
         >
           取消
         </button>
-        
+
         <div className="flex space-x-3">
           <button
             onClick={onCancel}

@@ -1,10 +1,10 @@
 # TASK-013: Real-time Collaboration Feature Analysis
 
-**Task ID:** TASK-013  
-**Assignee:** [To be assigned]  
-**Estimated Effort:** 3-4 days  
-**Skill Level Required:** Senior Engineer  
-**Priority:** Low  
+**Task ID:** TASK-013
+**Assignee:** [To be assigned]
+**Estimated Effort:** 3-4 days
+**Skill Level Required:** Senior Engineer
+**Priority:** Low
 **Dependencies:** TASK-002 (State Management Analysis)
 
 ## Task Overview
@@ -234,6 +234,6 @@ Consider how collaboration features would integrate:
 
 ---
 
-**Task Assignment Date:** [To be filled]  
-**Target Completion Date:** [To be filled]  
+**Task Assignment Date:** [To be filled]
+**Target Completion Date:** [To be filled]
 **Assigned Engineer:** [To be filled]

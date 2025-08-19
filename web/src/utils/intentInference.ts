@@ -49,11 +49,11 @@ const TARGET_KEYWORDS = {
 function inferAction(text: string): { action: string; confidence: number; reasoning: string } {
   const lowerText = text.toLowerCase();
   const scores: Record<string, { score: number; matches: string[] }> = {};
-  
+
   // 计算每种操作的得分
   for (const [action, keywords] of Object.entries(ACTION_KEYWORDS)) {
     scores[action] = { score: 0, matches: [] };
-    
+
     for (const keyword of keywords) {
       if (lowerText.includes(keyword.toLowerCase())) {
         scores[action].score += 1;
@@ -61,12 +61,12 @@ function inferAction(text: string): { action: string; confidence: number; reason
       }
     }
   }
-  
+
   // 找到得分最高的操作
   const sortedActions = Object.entries(scores)
     .sort(([,a], [,b]) => b.score - a.score)
     .filter(([,data]) => data.score > 0);
-  
+
   if (sortedActions.length === 0) {
     // 默认为modify，但置信度很低
     return {
@@ -75,10 +75,10 @@ function inferAction(text: string): { action: string; confidence: number; reason
       reasoning: '无法识别明确的操作关键词，默认为修改操作'
     };
   }
-  
+
   const [bestAction, bestData] = sortedActions[0];
   const confidence = Math.min(0.9, 0.5 + bestData.score * 0.2); // 基础0.5 + 关键词加成
-  
+
   return {
     action: bestAction,
     confidence,
@@ -91,7 +91,7 @@ function inferAction(text: string): { action: string; confidence: number; reason
  */
 function inferTargetPath(text: string, action: string): { path: string; confidence: number } {
   const lowerText = text.toLowerCase();
-  
+
   // 检测目标类型
   for (const [targetType, keywords] of Object.entries(TARGET_KEYWORDS)) {
     for (const keyword of keywords) {
@@ -109,7 +109,7 @@ function inferTargetPath(text: string, action: string): { path: string; confiden
       }
     }
   }
-  
+
   // 默认假设是故事相关
   const defaultPath = action === 'add' ? '/stories/-' : '/stories/0';
   return {
@@ -124,10 +124,10 @@ function inferTargetPath(text: string, action: string): { path: string; confiden
 export function inferIntentFromText(text: string): InferredIntent {
   const actionResult = inferAction(text);
   const targetResult = inferTargetPath(text, actionResult.action);
-  
+
   // 综合置信度
   const overallConfidence = (actionResult.confidence + targetResult.confidence) / 2;
-  
+
   return {
     action: actionResult.action as any,
     target_path: targetResult.path,
@@ -146,22 +146,22 @@ export function validateInferredIntent(intent: InferredIntent, _originalText: st
 } {
   const issues: string[] = [];
   const suggestions: string[] = [];
-  
+
   // 检查置信度
   if (intent.confidence < 0.5) {
     issues.push('意图推断置信度较低');
     suggestions.push('建议使用结构化命令获得更准确的结果');
   }
-  
+
   // 检查操作与目标的匹配性
   if (intent.action === 'add' && !intent.target_path.endsWith('/-')) {
     issues.push('添加操作的目标路径应该以 /- 结尾');
   }
-  
+
   if (intent.action === 'delete' && intent.target_path.endsWith('/-')) {
     issues.push('删除操作不能指向数组末尾');
   }
-  
+
   return {
     valid: issues.length === 0,
     issues,
@@ -174,13 +174,13 @@ export function validateInferredIntent(intent: InferredIntent, _originalText: st
  */
 export function suggestCommand(intent: InferredIntent, originalText: string): string {
   const { action, target_path } = intent;
-  
+
   if (target_path.includes('/stories')) {
-    const baseCommand = action === 'add' ? '/add story' : 
+    const baseCommand = action === 'add' ? '/add story' :
                        action === 'modify' ? '/edit story' :
-                       action === 'delete' ? '/del story' : 
+                       action === 'delete' ? '/del story' :
                        `/set ${target_path}`;
-    
+
     if (action === 'add') {
       return `${baseCommand} key=NEW-TOOL priority=P1 title="命令行工具" reason="优化代码工具"`;
     } else if (action === 'modify') {
@@ -189,6 +189,6 @@ export function suggestCommand(intent: InferredIntent, originalText: string): st
       return `${baseCommand} key=TARGET-KEY`;
     }
   }
-  
+
   return `/add story key=AUTO-${Date.now()} title="基于用户输入" reason="${originalText.slice(0, 50)}"`;
 }

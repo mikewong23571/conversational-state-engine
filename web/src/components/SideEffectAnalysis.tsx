@@ -52,7 +52,7 @@ export const SideEffectAnalysis: React.FC<SideEffectAnalysisProps> = ({
           </h3>
           <div className="space-y-3">
             {sideEffects.warnings.map((warning, index) => (
-              <div 
+              <div
                 key={index}
                 className={`p-4 rounded-lg border ${getSeverityColor(warning.severity)}`}
               >
@@ -88,7 +88,7 @@ export const SideEffectAnalysis: React.FC<SideEffectAnalysisProps> = ({
           </h3>
           <div className="space-y-3">
             {sideEffects.auto_fixes.map((fix, index) => (
-              <label 
+              <label
                 key={index}
                 className="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer"
               >
@@ -117,7 +117,7 @@ export const SideEffectAnalysis: React.FC<SideEffectAnalysisProps> = ({
               </label>
             ))}
           </div>
-          
+
           {enabledAutoFixes.length > 0 && (
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
               <div className="text-sm text-green-700">
@@ -166,13 +166,13 @@ export const SideEffectAnalysis: React.FC<SideEffectAnalysisProps> = ({
         >
           返回修改
         </button>
-        
+
         <button
           onClick={onConfirm}
           disabled={loading}
           className={`px-4 py-2 text-sm font-medium rounded-md disabled:opacity-50 ${
-            hasHighRiskWarnings 
-              ? 'text-white bg-red-600 hover:bg-red-700' 
+            hasHighRiskWarnings
+              ? 'text-white bg-red-600 hover:bg-red-700'
               : 'text-white bg-green-600 hover:bg-green-700'
           }`}
         >

@@ -28,10 +28,10 @@ export function testPatch(state: any, patch: Operation): PatchTestResult {
     console.log('🧪 Initial state:', JSON.stringify(testState, null, 2));
 
     const result = applyPatch(testState, [normalizedPatch], false, false);
-    
+
     console.log('✅ Patch test successful');
     console.log('🧪 Result state:', JSON.stringify(result.newDocument, null, 2));
-    
+
     return {
       success: true,
       resultState: result.newDocument,
@@ -42,7 +42,7 @@ export function testPatch(state: any, patch: Operation): PatchTestResult {
     console.error('❌ Patch test failed:', error);
     console.error('❌ Failed patch:', patch);
     console.error('❌ Test state:', JSON.stringify(testState, null, 2));
-    
+
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
@@ -62,21 +62,21 @@ export function testPatches(state: any, patches: Operation[]): {
 } {
   let currentState = JSON.parse(JSON.stringify(state));
   const results: PatchTestResult[] = [];
-  
+
   for (let i = 0; i < patches.length; i++) {
     const result = testPatch(currentState, patches[i]);
     results.push(result);
-    
+
     if (!result.success) {
       return {
         success: false,
         results
       };
     }
-    
+
     currentState = result.resultState;
   }
-  
+
   return {
     success: true,
     results,
@@ -96,10 +96,10 @@ export function validatePatchPath(state: any, path: string): {
     const fullPath = path.startsWith('/data') ? path : `/data${path}`;
     const pathParts = fullPath.split('/').filter(part => part !== '');
     let current = state;
-    
+
     for (let i = 0; i < pathParts.length; i++) {
       const part = pathParts[i];
-      
+
       // 处理数组索引
       if (part === '-') {
         // 添加到数组末尾，检查前一个是否是数组
@@ -167,7 +167,7 @@ export function validatePatchPath(state: any, path: string): {
  */
 export function suggestPatchFix(state: any, patch: Operation, error: string): string[] {
   const suggestions: string[] = [];
-  
+
   // 检查路径
   const pathValidation = validatePatchPath(state, patch.path);
   if (!pathValidation.valid) {
@@ -176,13 +176,13 @@ export function suggestPatchFix(state: any, patch: Operation, error: string): st
       suggestions.push(`建议: ${pathValidation.suggestion}`);
     }
   }
-  
+
   // 检查操作类型
   if (patch.op === 'add') {
     if (!('value' in patch)) {
       suggestions.push('ADD操作缺少value属性');
     }
-    
+
     if (patch.path.endsWith('/-')) {
       const arrayPath = patch.path.substring(0, patch.path.length - 2);
       const arrayValidation = validatePatchPath(state, arrayPath);
@@ -191,18 +191,18 @@ export function suggestPatchFix(state: any, patch: Operation, error: string): st
       }
     }
   }
-  
+
   if (patch.op === 'replace') {
     if (!('value' in patch)) {
       suggestions.push('REPLACE操作缺少value属性');
     }
   }
-  
+
   // 检查常见的结构问题
   if (error.includes('undefined') || error.includes('null')) {
     suggestions.push('目标路径可能指向undefined或null值');
     suggestions.push('检查状态结构是否与补丁路径匹配');
   }
-  
+
   return suggestions;
 }
