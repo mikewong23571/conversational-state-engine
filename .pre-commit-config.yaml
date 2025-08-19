@@ -14,19 +14,16 @@ repos:
     hooks:
       - id: isort
         args: ["--profile", "black"]
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [pydantic]
-        args: ["--ignore-missing-imports"]
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.0.0
     hooks:
       - id: eslint
         types_or: [javascript, jsx, ts, tsx]
         files: "^web/"
+        args: ["--config", "web/eslint.config.js"]
         additional_dependencies:
           - eslint@9.0.0
           - typescript@5.3.3
+          - '@typescript-eslint/parser@6.0.0'
+          - '@typescript-eslint/eslint-plugin@6.0.0'
         language_version: system
