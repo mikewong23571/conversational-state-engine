@@ -17,12 +17,17 @@ export interface PatchTestResult {
  */
 export function testPatch(state: any, patch: Operation): PatchTestResult {
   const testState = JSON.parse(JSON.stringify(state));
-  
+
   try {
-    console.log('🧪 Testing patch:', patch);
+    // 如果补丁路径缺少 /data 前缀，补上以适配完整状态
+    const normalizedPatch = patch.path.startsWith('/data')
+      ? patch
+      : { ...patch, path: `/data${patch.path}` };
+
+    console.log('🧪 Testing patch:', normalizedPatch);
     console.log('🧪 Initial state:', JSON.stringify(testState, null, 2));
-    
-    const result = applyPatch(testState, [patch], false, false);
+
+    const result = applyPatch(testState, [normalizedPatch], false, false);
     
     console.log('✅ Patch test successful');
     console.log('🧪 Result state:', JSON.stringify(result.newDocument, null, 2));
@@ -31,7 +36,7 @@ export function testPatch(state: any, patch: Operation): PatchTestResult {
       success: true,
       resultState: result.newDocument,
       originalState: state,
-      patch
+      patch: normalizedPatch
     };
   } catch (error) {
     console.error('❌ Patch test failed:', error);
@@ -42,7 +47,7 @@ export function testPatch(state: any, patch: Operation): PatchTestResult {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       originalState: state,
-      patch
+      patch: normalizedPatch
     };
   }
 }
@@ -88,7 +93,8 @@ export function validatePatchPath(state: any, path: string): {
   suggestion?: string;
 } {
   try {
-    const pathParts = path.split('/').filter(part => part !== '');
+    const fullPath = path.startsWith('/data') ? path : `/data${path}`;
+    const pathParts = fullPath.split('/').filter(part => part !== '');
     let current = state;
     
     for (let i = 0; i < pathParts.length; i++) {
@@ -100,7 +106,7 @@ export function validatePatchPath(state: any, path: string): {
         if (!Array.isArray(current)) {
           return {
             valid: false,
-            issue: `Path ${path}: 尝试添加到非数组对象`,
+            issue: `Path ${fullPath}: 尝试添加到非数组对象`,
             suggestion: `确保路径 /${pathParts.slice(0, i).join('/')} 指向一个数组`
           };
         }
@@ -111,14 +117,14 @@ export function validatePatchPath(state: any, path: string): {
         if (!Array.isArray(current)) {
           return {
             valid: false,
-            issue: `Path ${path}: 尝试访问非数组的索引 ${index}`,
+            issue: `Path ${fullPath}: 尝试访问非数组的索引 ${index}`,
             suggestion: `确保路径 /${pathParts.slice(0, i).join('/')} 指向一个数组`
           };
         }
         if (index >= current.length) {
           return {
             valid: false,
-            issue: `Path ${path}: 索引 ${index} 超出数组长度 ${current.length}`,
+            issue: `Path ${fullPath}: 索引 ${index} 超出数组长度 ${current.length}`,
             suggestion: `使用有效的索引 (0-${current.length-1}) 或使用 '-' 添加到末尾`
           };
         }
@@ -128,24 +134,24 @@ export function validatePatchPath(state: any, path: string): {
         if (current === null || typeof current !== 'object') {
           return {
             valid: false,
-            issue: `Path ${path}: 尝试访问非对象的属性 ${part}`,
+            issue: `Path ${fullPath}: 尝试访问非对象的属性 ${part}`,
             suggestion: `确保路径 /${pathParts.slice(0, i).join('/')} 指向一个对象`
           };
         }
-        
+
         // 对于中间路径，属性必须存在
         if (i < pathParts.length - 1 && !(part in current)) {
           return {
             valid: false,
-            issue: `Path ${path}: 中间路径属性 ${part} 不存在`,
+            issue: `Path ${fullPath}: 中间路径属性 ${part} 不存在`,
             suggestion: `确保属性 ${part} 存在于状态中`
           };
         }
-        
+
         current = current[part];
       }
     }
-    
+
     return { valid: true };
   } catch (error) {
     return {
