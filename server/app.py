@@ -17,7 +17,9 @@ load_dotenv()
 
 from .models import (
     IntentionSet, State, PatchProposal, ImpactAnalysis,
-    Commit, Session, Patch, Conflict, PatchProposalRequest
+    Commit, Session, Patch, Conflict, PatchProposalRequest,
+    ConfirmIntentRequest, ConfirmChangesRequest,
+    ConfirmSideEffectsRequest, CommitRequest
 )
 from .conflicts import create_default_detector, ConflictResolver
 from .renderer_incremental import create_renderer
@@ -1043,7 +1045,7 @@ async def validate_patches_endpoint(
 @app.post("/sessions/{sid}/confirm-intent")
 async def confirm_intent_stage(
     sid: str,
-    proposal_id: str,
+    request: ConfirmIntentRequest,
     current_user: User = Depends(get_current_user)
 ):
     """第一阶段：确认意图理解"""
@@ -1054,6 +1056,8 @@ async def confirm_intent_stage(
             detail="Insufficient permissions. Required: write"
         )
         
+    proposal_id = request.proposal_id
+
     with get_db() as conn:
         # 获取提案
         proposal_row = conn.execute(
@@ -1089,8 +1093,7 @@ async def confirm_intent_stage(
 @app.post("/sessions/{sid}/confirm-changes")
 async def confirm_changes_stage(
     sid: str,
-    proposal_id: str,
-    selected_patch_indices: Optional[List[int]] = None,
+    request: ConfirmChangesRequest,
     current_user: User = Depends(get_current_user)
 ):
     """第二阶段：确认具体变更"""
@@ -1101,6 +1104,9 @@ async def confirm_changes_stage(
             detail="Insufficient permissions. Required: write"
         )
         
+    proposal_id = request.proposal_id
+    selected_patch_indices = request.selected_patch_indices
+
     with get_db() as conn:
         # 获取提案
         proposal_row = conn.execute(
@@ -1177,8 +1183,7 @@ async def confirm_changes_stage(
 @app.post("/sessions/{sid}/confirm-side-effects")
 async def confirm_side_effects_stage(
     sid: str,
-    proposal_id: str,
-    apply_auto_fixes: bool = False,
+    request: ConfirmSideEffectsRequest,
     current_user: User = Depends(get_current_user)
 ):
     """第三阶段：确认副作用并应用自动修复"""
@@ -1189,6 +1194,9 @@ async def confirm_side_effects_stage(
             detail="Insufficient permissions. Required: write"
         )
         
+    proposal_id = request.proposal_id
+    apply_auto_fixes = request.apply_auto_fixes
+
     with get_db() as conn:
         # 获取提案
         proposal_row = conn.execute(
@@ -1308,9 +1316,8 @@ async def get_proposal_status(
 
 @app.post("/sessions/{sid}/commit")
 async def commit_changes(
-    sid: str, 
-    proposal_id: str, 
-    message: Optional[str] = None,
+    sid: str,
+    request: CommitRequest,
     current_user: User = Depends(get_current_user)
 ):
     """提交变更（需要完成三阶段确认）"""
@@ -1321,8 +1328,11 @@ async def commit_changes(
             detail="Insufficient permissions. Required: write"
         )
     
+    proposal_id = request.proposal_id
+    message = request.message
+
     commit_id = f"c_{uuid.uuid4().hex[:8]}"
-    
+
     with get_db() as conn:
         # 获取提案
         proposal_row = conn.execute(
