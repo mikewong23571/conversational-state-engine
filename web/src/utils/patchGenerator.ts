@@ -117,8 +117,10 @@ function extractAttributesFromText(text: string): Record<string, any> {
   } else if (title.includes('代码') || title.includes('分析')) {
     keyBase = `CODE-${keyBase}`;
   }
-  
-  attributes.key = `AUTO-${keyBase}-${Date.now()}`;
+
+  // 确保生成的 key 符合 ^[A-Z]+-[A-Za-z0-9]+$ 格式
+  const keyPrefix = `AUTO${keyBase.replace(/[^A-Z]/g, '')}`;
+  attributes.key = `${keyPrefix}-${Date.now()}`;
   
   // 添加其他常用属性
   attributes.status = 'draft';
