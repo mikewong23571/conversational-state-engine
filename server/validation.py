@@ -313,7 +313,11 @@ class SchemaValidator:
             # Validate auth_type values when provided
             value = intention.get("value") or {}
             auth_type = value.get("auth_type")
-            if auth_type is not None and auth_type not in {"password", "sso", "biometric"}:
+            if auth_type is not None and auth_type not in {
+                "password",
+                "sso",
+                "biometric",
+            }:
                 result.add_error(
                     f"items[{i}].value.auth_type",
                     f"Invalid auth_type '{auth_type}'",

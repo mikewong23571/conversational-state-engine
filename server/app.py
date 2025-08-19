@@ -720,9 +720,7 @@ async def draft_intents(
         )
 
     # Validate intention set schema
-    validation_result = schema_validator.validate_intentions(
-        intention_set.model_dump()
-    )
+    validation_result = schema_validator.validate_intentions(intention_set.model_dump())
     if not validation_result.is_valid:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
