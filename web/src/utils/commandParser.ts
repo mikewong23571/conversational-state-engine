@@ -16,7 +16,7 @@ export interface CommandResult {
 export interface ParsedCommand {
   action: 'add' | 'edit' | 'delete' | 'set' | 'move';
   target: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   reason?: string;
   confidence: number;
 }
@@ -35,8 +35,8 @@ const COMMAND_PATTERNS = {
  * 解析键值对参数
  * 支持格式：key=value key="quoted value" key=[array,values] reason="reason text"
  */
-function parseKeyValuePairs(input: string): Record<string, any> {
-  const result: Record<string, any> = {};
+function parseKeyValuePairs(input: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   // 正则匹配 key=value, key="value", key=[array]
   const kvRegex = /(\w+)=(?:"([^"]*)"|(\[[^\]]*\])|([^\s]+))/g;
@@ -74,7 +74,7 @@ function parseKeyValuePairs(input: string): Record<string, any> {
 /**
  * 生成目标路径
  */
-function generateTargetPath(action: string, target: string, properties: Record<string, any>): string {
+function generateTargetPath(action: string, target: string, properties: Record<string, unknown>): string {
   switch (action) {
     case 'add':
       if (target === 'story') {
@@ -114,15 +114,15 @@ function parseCommand(input: string): ParsedCommand | null {
       const params = match[2] || '';
 
       // 解析参数
-      const properties = parseKeyValuePairs(params);
-      const reason = properties.reason;
-      delete properties.reason; // reason不是属性
+        const properties = parseKeyValuePairs(params);
+        const reason = typeof properties.reason === 'string' ? properties.reason : undefined;
+        delete (properties as Record<string, unknown>).reason; // reason不是属性
 
       // 生成目标路径
       const targetPath = generateTargetPath(action, target, properties);
 
       return {
-        action: action === 'del' || action === 'delete' ? 'delete' : action as any,
+        action: action === 'del' || action === 'delete' ? 'delete' : action as 'add' | 'edit' | 'delete' | 'set' | 'move',
         target: targetPath,
         properties,
         reason,

@@ -7,14 +7,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-try:
-    from pydantic import root_validator, validator  # Pydantic v1
-except ImportError:
-    from pydantic import field_validator as validator  # Pydantic v2
-    from pydantic import model_validator
-
-    def root_validator(**kwargs):
-        return model_validator(mode="before")
+try:  # Prefer Pydantic v1 style validators without deprecation warnings
+    from pydantic.v1 import root_validator, validator
+except ImportError:  # Pydantic v1 without namespace package
+    from pydantic import root_validator, validator
 
 
 from typing import Annotated
@@ -24,7 +20,8 @@ JsonPointer = Annotated[str, Field(pattern=r"^(/[^/]*)+$")]
 OptionalString = Annotated[str, Field(min_length=1, max_length=500)]
 EvidenceString = Annotated[str, Field(max_length=1000)]
 ConstrainedFloat = Annotated[float, Field(ge=0.0, le=1.0)]
-StoryKey = Annotated[str, Field(pattern=r"^[A-Z]+-[A-Za-z0-9]+$")]
+# Allow numeric characters in story key prefixes (e.g., "E2E-Login")
+StoryKey = Annotated[str, Field(pattern=r"^[A-Z0-9]+-[A-Za-z0-9]+$")]
 StoryTitle = Annotated[str, Field(min_length=1, max_length=200)]
 CriteriaString = Annotated[str, Field(min_length=1, max_length=500)]
 PatchPath = Annotated[str, Field(pattern=r"^(/[^/]*)*$")]

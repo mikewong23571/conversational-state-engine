@@ -87,11 +87,11 @@ class SchemaValidator:
             if isinstance(state_data, dict) and "data" in state_data:
                 # Full state validation
                 validated_state = State(**state_data)
-                state_data = validated_state.data.dict()
+                state_data = validated_state.data.model_dump()
             else:
                 # Data-only validation
                 validated_data = StateData(**state_data)
-                state_data = validated_data.dict()
+                state_data = validated_data.model_dump()
 
         except ValidationError as e:
             for error in e.errors():
@@ -120,7 +120,10 @@ class SchemaValidator:
             return result
 
         # Additional intention-specific validation
-        self._validate_intention_patterns(validated_intentions.dict(), result)
+        self._validate_intention_patterns(
+            validated_intentions.model_dump(),
+            result,
+        )
 
         return result
 
@@ -305,6 +308,20 @@ class SchemaValidator:
                     f"items[{i}].reason",
                     f"{intention['action'].title()} operations should include a reason",
                     "missing_reason",
+                )
+
+            # Validate auth_type values when provided
+            value = intention.get("value") or {}
+            auth_type = value.get("auth_type")
+            if auth_type is not None and auth_type not in {
+                "password",
+                "sso",
+                "biometric",
+            }:
+                result.add_error(
+                    f"items[{i}].value.auth_type",
+                    f"Invalid auth_type '{auth_type}'",
+                    "invalid_auth_type",
                 )
 
     def _validate_patch_sequence(self, patches: List[Patch], result: ValidationResult):

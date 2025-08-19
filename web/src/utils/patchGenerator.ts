@@ -14,8 +14,8 @@ export interface GeneratedPatchResult {
 /**
  * 从自然语言中提取可能的属性值
  */
-function extractAttributesFromText(text: string): Record<string, any> {
-  const attributes: Record<string, any> = {};
+function extractAttributesFromText(text: string): Record<string, unknown> {
+  const attributes: Record<string, unknown> = {};
 
   // 提取优先级
   const priorityMatch = text.match(/P[0-3]|[Pp]riority\s*[=:]\s*P?[0-3]|高优先级|中优先级|低优先级/i);

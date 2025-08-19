@@ -6,7 +6,7 @@ export type ConfirmationStage = 'intent' | 'change' | 'side_effect' | 'completed
 export interface IntentSummary {
   action: string;
   target_path: string;
-  value?: any;
+  value?: unknown;
   reason: string;
   confidence: number;
 }
@@ -22,9 +22,9 @@ export interface ChangePreview {
       rule: string;
       severity: 'low' | 'medium' | 'high';
       message: string;
-      suggestion?: any;
+      suggestion?: unknown;
     }>;
-    suggested_alternatives?: any[];
+    suggested_alternatives?: unknown[];
   };
 }
 
