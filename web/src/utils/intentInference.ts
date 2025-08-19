@@ -96,9 +96,12 @@ function inferTargetPath(text: string, action: string): { path: string; confiden
   for (const [targetType, keywords] of Object.entries(TARGET_KEYWORDS)) {
     for (const keyword of keywords) {
       if (lowerText.includes(keyword.toLowerCase())) {
-        const basePath = targetType === 'story' ? '/stories' : `/${targetType}`;
+        const basePath =
+          targetType === 'story' || targetType === 'tool'
+            ? '/stories'
+            : `/${targetType}`;
         const path = action === 'add' ? `${basePath}/-` : `${basePath}/0`;
-        
+
         return {
           path,
           confidence: 0.8

@@ -179,6 +179,24 @@ class ImpactAnalysis(BaseModel):
     semantic_conflicts: List[Conflict] = Field(default_factory=list)
     suggested_alternatives: List[Dict[str, Any]] = Field(default_factory=list)
 
+class PatchProposalRequest(BaseModel):
+    intention_set_id: str
+
+class ConfirmIntentRequest(BaseModel):
+    proposal_id: str
+
+class ConfirmChangesRequest(BaseModel):
+    proposal_id: str
+    selected_patch_indices: Optional[List[int]] = None
+
+class ConfirmSideEffectsRequest(BaseModel):
+    proposal_id: str
+    apply_auto_fixes: bool = False
+
+class CommitRequest(BaseModel):
+    proposal_id: str
+    message: Optional[str] = None
+
 class PatchProposal(BaseModel):
     proposal_id: str
     patches: List[Patch]
