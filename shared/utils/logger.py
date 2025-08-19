@@ -1,4 +1,5 @@
 """Simple logging helper."""
+
 import logging
 
 logger = logging.getLogger("cse")

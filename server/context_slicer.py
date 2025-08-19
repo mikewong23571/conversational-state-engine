@@ -1,6 +1,7 @@
 """
 ContextSlicer for intelligent state slicing and context management
 """
+
 import json
 from dataclasses import dataclass
 from pathlib import Path

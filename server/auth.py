@@ -1,6 +1,7 @@
 """
 Authentication and authorization module for Conversational State Engine
 """
+
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone

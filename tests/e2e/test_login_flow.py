@@ -1,6 +1,7 @@
 """
 End-to-end test for login story flow
 """
+
 import json
 from typing import Any, Dict
 

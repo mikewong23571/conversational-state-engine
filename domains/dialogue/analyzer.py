@@ -124,7 +124,11 @@ class MockAnalyzer:
             action = "add"
 
         # 提取实体信息
-        if "故事" in message_lower or "需求" in message_lower or "story" in message_lower:
+        if (
+            "故事" in message_lower
+            or "需求" in message_lower
+            or "story" in message_lower
+        ):
             # 提取故事相关信息
             story_data = self._extract_story_info(message)
 

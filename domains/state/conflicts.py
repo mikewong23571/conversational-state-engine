@@ -271,7 +271,9 @@ def create_default_detector() -> ConflictDetector:
             "检测SSO与本地密码要求的互斥",
         ),
         Rule("dependency_order", "medium", dependency_order, "检测依赖优先级的合理性"),
-        Rule("timeline_consistency", "high", timeline_consistency, "检测时间线的一致性"),
+        Rule(
+            "timeline_consistency", "high", timeline_consistency, "检测时间线的一致性"
+        ),
         Rule(
             "duplicate_detection",
             "medium",
