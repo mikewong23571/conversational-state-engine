@@ -17,7 +17,7 @@ load_dotenv()
 
 from .models import (
     IntentionSet, State, PatchProposal, ImpactAnalysis,
-    Commit, Session, Patch, Conflict
+    Commit, Session, Patch, Conflict, PatchProposalRequest
 )
 from .conflicts import create_default_detector, ConflictResolver
 from .renderer_incremental import create_renderer
@@ -697,8 +697,8 @@ async def draft_intents(
 
 @app.post("/sessions/{sid}/patch-proposals")
 async def propose_patches(
-    sid: str, 
-    intention_set_id: str,
+    sid: str,
+    request: PatchProposalRequest,
     current_user: User = Depends(get_current_user)
 ):
     """根据意图生成补丁提案和影响分析"""
@@ -710,7 +710,9 @@ async def propose_patches(
         )
     
     proposal_id = f"pp_{uuid.uuid4().hex[:8]}"
-    
+
+    intention_set_id = request.intention_set_id
+
     with get_db() as conn:
         # 获取意图草稿
         intention_row = conn.execute(

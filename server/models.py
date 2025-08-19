@@ -179,6 +179,9 @@ class ImpactAnalysis(BaseModel):
     semantic_conflicts: List[Conflict] = Field(default_factory=list)
     suggested_alternatives: List[Dict[str, Any]] = Field(default_factory=list)
 
+class PatchProposalRequest(BaseModel):
+    intention_set_id: str
+
 class PatchProposal(BaseModel):
     proposal_id: str
     patches: List[Patch]
