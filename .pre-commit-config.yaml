@@ -1,32 +1,43 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: local
     hooks:
       - id: trailing-whitespace
+        name: trailing-whitespace
+        entry: uv run trailing-whitespace-fixer
+        language: system
+        types: [text]
+
       - id: end-of-file-fixer
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
+        name: end-of-file-fixer
+        entry: uv run end-of-file-fixer
+        language: system
+        types: [text]
+
       - id: black
-        language_version: python3
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.2
-    hooks:
+        name: black
+        entry: uv run black
+        language: system
+        types: [python]
+
       - id: ruff
+        name: ruff
+        entry: uv run ruff
+        language: system
+        types: [python]
         args: ["--fix", "--exit-non-zero-on-fix"]
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.1
-    hooks:
+
       - id: mypy
-        args: ["server", "domains", "shared"]
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
         pass_filenames: false
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.33.0
-    hooks:
+        args: ["server", "domains", "shared"]
+
       - id: eslint
+        name: eslint
+        entry: uv run eslint
+        language: system
         types_or: [javascript, jsx, ts, tsx]
         files: "^web/"
         args: ["--config", "web/eslint.config.js"]
-        additional_dependencies:
-          - eslint@9.33.0
-        language_version: system

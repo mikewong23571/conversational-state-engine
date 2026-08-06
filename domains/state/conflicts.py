@@ -72,7 +72,7 @@ def auth_method_conflict(state: dict) -> list[Conflict]:
     stories = state.get("data", {}).get("stories", [])
 
     for story in stories:
-        if story.get("auth_type") == "SSO":
+        if story.get("auth_type", "").upper() == "SSO":
             # 检查验收标准中是否有本地密码相关要求
             criteria = story.get("acceptance_criteria", [])
             for criterion in criteria:

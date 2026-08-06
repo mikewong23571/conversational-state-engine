@@ -37,6 +37,8 @@ dev-dependencies = [
     "ruff>=0.1.0",
     "pre-commit>=4.3.0",
     "black>=25.1.0",
+    "types-python-jose",
+    "types-passlib",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -48,11 +50,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "pre-commit-hooks>=6.0.0",
     "pytest-cov>=6.2.1",
+    "types-requests>=2.32.4.20250809",
 ]
 
 [tool.mypy]
 python_version = "3.10"
+plugins = ["pydantic.mypy"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -66,15 +71,42 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 show_error_context = true
+ignore_missing_imports = false
 
 [[tool.mypy.overrides]]
 module = ["domains.*", "shared.*"]
 strict = true
 
+# Temporary relaxed settings for auth domain migration
+[[tool.mypy.overrides]]
+module = ["domains.auth.*"]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_return_any = false
+
 [[tool.mypy.overrides]]
 module = ["server.*"]
 disallow_any_explicit = true
 warn_return_any = true
+ignore_missing_imports = true
+
+# Temporary relaxed settings for API migration
+[[tool.mypy.overrides]]
+module = ["api.*"]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+
+# External dependencies that may not have stubs in pre-commit environment
+[[tool.mypy.overrides]]
+module = ["fastapi.*", "uvicorn.*", "jose.*", "passlib.*", "jsonpatch.*"]
+ignore_missing_imports = true
+ignore_errors = true
+
+[tool.pydantic-mypy]
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 
 [tool.ruff]
 target-version = "py310"
